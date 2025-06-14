@@ -16,9 +16,9 @@ export interface LearningProgress {
 }
 
 export interface FlashcardType {
-  id: number;
-  question: string;
-  answer: string;
+  id: string;
+  front: string;
+  back: string;
   category: string;
   xp: number;
   difficulty: "Beginner" | "Intermediate" | "Advanced";
