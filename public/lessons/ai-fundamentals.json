@@ -1,0 +1,26 @@
+[
+  {
+    "id": "ai-lesson-1",
+    "title": "Introduction to Artificial Intelligence",
+    "summary": "This lesson covers the fundamental concepts of AI, its history, and various applications in the modern world. You will learn about different types of AI and their impact on society.",
+    "quizLink": "/quest/ai-fundamentals/quiz",
+    "flashcardLink": "/quest/ai-fundamentals/flashcards"
+  },
+  {
+    "id": "ai-lesson-2",
+    "title": "Machine Learning Basics",
+    "summary": "Dive into the core principles of machine learning, including supervised, unsupervised, and reinforcement learning. Understand how algorithms learn from data and make predictions.",
+    "quizLink": "/quest/ai-fundamentals/quiz"
+  },
+  {
+    "id": "ai-lesson-3",
+    "title": "Deep Learning and Neural Networks",
+    "summary": "Explore the advanced concepts of deep learning, focusing on neural networks, their architecture, and how they are trained. Discover the power of deep neural networks in complex problem-solving.",
+    "flashcardLink": "/quest/ai-fundamentals/flashcards"
+  },
+  {
+    "id": "ai-lesson-4",
+    "title": "AI Ethics and Future Trends",
+    "summary": "Examine the ethical considerations surrounding AI development and its societal implications. Discuss the future trends and potential challenges in the field of artificial intelligence."
+  }
+]

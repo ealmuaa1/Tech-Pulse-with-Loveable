@@ -1,0 +1,21 @@
+[
+  {
+    "id": "blockchain-lesson-1",
+    "title": "Introduction to Blockchain",
+    "summary": "Learn the foundational concepts of blockchain technology, its decentralized nature, and the principles of distributed ledgers.",
+    "quizLink": "/quest/blockchain-basics/quiz",
+    "flashcardLink": "/quest/blockchain-basics/flashcards"
+  },
+  {
+    "id": "blockchain-lesson-2",
+    "title": "Cryptocurrencies and Mining",
+    "summary": "Explore how cryptocurrencies work, the process of mining, and the role of consensus mechanisms like Proof of Work.",
+    "quizLink": "/quest/blockchain-basics/quiz"
+  },
+  {
+    "id": "blockchain-lesson-3",
+    "title": "Smart Contracts and DApps",
+    "summary": "Understand what smart contracts are, how they function on blockchain platforms, and the basics of building decentralized applications (DApps).",
+    "flashcardLink": "/quest/blockchain-basics/flashcards"
+  }
+]
