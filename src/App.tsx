@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
 import TopNavigation from "@/components/TopNavigation";
-import Home from "./pages/Index";
+import Home from "./pages/Index"; // or whatever your main page is
 import Profile from "./pages/Profile";
 import Digests from "./pages/Digests";
 import Learn from "@/pages/Learn";
@@ -13,6 +13,21 @@ import QuestPage from "@/pages/QuestPage";
 import Dashboard from "@/pages/Dashboard";
 import Ideas from "@/pages/Ideas";
 
+/**
+ * App component - Main application router
+ * Routes:
+ * - /: Home page
+ * - /profile: User profile page
+ * - /digests: Tech digests page
+ * - /learn: Learning page
+ * - /learn/:slug: Topic page
+ * - /learn/:slug/flashcards: Flashcard page
+ * - /learn/:slug/quiz: Quiz page
+ * - /quest/:questId: Quest page
+ * - /dashboard: Dashboard page
+ * - /ideas: Ideas page
+ * - *: 404 Not Found page
+ */
 function App() {
   return (
     <Router>

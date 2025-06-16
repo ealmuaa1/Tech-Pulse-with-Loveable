@@ -1,12 +1,14 @@
-/// <reference types="vite/client" />
 import React from "react";
-import { createRoot } from "react-dom/client";
-import App from "./App.tsx";
+import ReactDOM from "react-dom/client";
+import App from "./App";
 import "./index.css";
-import "./lib/firebase"; // Firebase initialization
+import "./lib/firebase"; // to initialize Firebase
 
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Failed to find the root element");
 
-const root = createRoot(rootElement);
-root.render(<App />);
+ReactDOM.createRoot(rootElement).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
