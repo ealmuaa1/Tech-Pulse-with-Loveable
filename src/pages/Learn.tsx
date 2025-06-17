@@ -59,6 +59,9 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@supabase/auth-helpers-react";
+import { Link } from "react-router-dom";
+import { useTrends } from "@/contexts/TrendContext";
+import Toolkits from "@/pages/Toolkits";
 
 /**
  * Learning quests data
@@ -240,6 +243,7 @@ const Learn = () => {
     streak: 0,
     lastActive: new Date(),
   });
+  const { dailyTrends, loadingTrends, errorTrends } = useTrends();
 
   // Fetch user's favorite topics
   useEffect(() => {
@@ -341,166 +345,97 @@ const Learn = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 pb-20">
-      {/* Header */}
-      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 z-20 shadow-sm">
-        <div className="max-w-6xl mx-auto px-6 py-6">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg transform rotate-3">
-              <Brain className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-purple-700 dark:from-white dark:to-purple-400 bg-clip-text text-transparent mb-1">
-                Learning Quests
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Master tech skills through interactive quests
-              </p>
-            </div>
+    <div className="min-h-screen bg-background text-foreground pb-20">
+      <div className="container space-y-6 p-6 mx-auto">
+        {/* Learning Progress Section */}
+        <div className="bg-card p-6 rounded-2xl shadow-md mb-6">
+          <h2 className="text-lg font-semibold mb-2">Learning Progress</h2>
+          <p className="text-muted-foreground mb-1 text-sm">
+            3 more digests to complete your weekly goal! 🚀
+          </p>
+          <div className="w-full h-4 bg-muted rounded-full overflow-hidden">
+            <div
+              className="h-4 bg-primary rounded-full"
+              style={{ width: "67%" }}
+            />
           </div>
+          <p className="text-right mt-1 text-sm text-primary font-medium">
+            67%
+          </p>
         </div>
-      </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
-        {/* Achievements section */}
-        <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-3xl p-6 shadow-lg border border-white/20 dark:border-gray-700/20">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-lg flex items-center justify-center">
-              <Star className="w-5 h-5 text-white" />
-            </div>
-            Achievements
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {achievements.map((achievement, index) => (
+        {/* Today's Idea Spark Card */}
+        <div className="bg-green-100 p-4 rounded-2xl mb-6">
+          <h3 className="text-md font-semibold text-green-800">
+            Today's Idea Spark
+          </h3>
+          <p className="text-sm text-green-900">
+            Smart City Infrastructure: What if streetlights adjusted traffic by
+            air quality?
+          </p>
+          <button className="mt-2 bg-green-700 text-white px-4 py-1 rounded-md hover:bg-green-800">
+            Explore More
+          </button>
+        </div>
+
+        {/* Today's Top Digests */}
+        <div className="bg-card p-6 rounded-2xl shadow-md mb-6">
+          <h2 className="text-lg font-semibold mb-4">Today's Top Digests</h2>
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+            {dailyTrends.map((digest) => (
               <div
-                key={index}
-                className={`p-4 rounded-2xl text-center transform transition-all duration-200 hover:scale-105 ${
-                  achievement.unlocked
-                    ? "bg-gradient-to-br from-yellow-100 to-orange-100 dark:from-yellow-900/30 dark:to-orange-900/30 border-2 border-yellow-300 dark:border-yellow-700 shadow-lg"
-                    : "bg-gray-100 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 opacity-60"
-                }`}
+                key={digest.id}
+                className="bg-white dark:bg-muted rounded-xl shadow overflow-hidden border border-border"
               >
-                <div className="text-3xl mb-2">{achievement.icon}</div>
-                <div className="font-semibold text-gray-900 dark:text-white text-sm">
-                  {achievement.name}
-                </div>
-                <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                  {achievement.description}
+                <img
+                  src={digest.image_url || "https://picsum.photos/800/600"}
+                  alt={digest.title}
+                  className="w-full h-48 object-cover rounded-t-lg"
+                  onError={(e) => {
+                    console.log("Image failed to load:", digest.title);
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src =
+                      "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDMwMCAyMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNFMEUwRTAiLz48dGV4dCB4PSI1MCIgeT0iMTAwIiBmb250LXNpemU9IjI0IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2NjYyI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+";
+                  }}
+                  onLoad={() =>
+                    console.log("Image loaded successfully:", digest.title)
+                  }
+                />
+                <div className="p-4">
+                  <span className="text-xs bg-muted px-2 py-1 rounded text-muted-foreground">
+                    {digest.source}
+                  </span>
+                  <h4 className="text-xl font-bold mt-2">{digest.title}</h4>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {digest.summary}
+                  </p>
+                  <div className="flex gap-2 mt-3">
+                    <Link
+                      to={digest.url || "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-primary text-white px-3 py-1 rounded hover:bg-primary/90"
+                    >
+                      Read More
+                    </Link>
+                    <button className="bg-muted px-3 py-1 rounded">
+                      Discuss
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Learning Quests */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredLearningQuests.map((quest) => (
-            <motion.div
-              key={quest.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              whileHover={{ scale: 1.02 }}
-              className="relative"
-            >
-              <Card
-                className={`overflow-hidden cursor-pointer transition-all duration-300 ${
-                  quest.locked ? "opacity-75" : ""
-                }`}
-                onClick={() => !quest.locked && handleQuestClick(quest)}
-              >
-                <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-3xl shadow-lg border border-white/20 dark:border-gray-700/20 overflow-hidden">
-                  {/* Image */}
-                  <div className="relative h-48 overflow-hidden">
-                    <img
-                      src={quest.image}
-                      alt={quest.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                    <div className="absolute top-4 left-4">
-                      <Badge
-                        variant="secondary"
-                        className={`bg-gradient-to-r ${getDifficultyColor(
-                          quest.difficulty
-                        )} text-white backdrop-blur-sm shadow-md`}
-                      >
-                        {quest.difficulty}
-                      </Badge>
-                    </div>
-                    {quest.locked && (
-                      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center">
-                        <div className="text-white text-center">
-                          <Target className="w-8 h-8 mx-auto mb-2" />
-                          <div className="font-semibold">Locked</div>
-                          <div className="text-sm">
-                            Complete previous quests to unlock
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-purple-700 dark:group-hover:text-purple-400 transition-colors duration-200">
-                      {quest.title}
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
-                      {quest.description}
-                    </p>
-
-                    {/* Progress */}
-                    <div className="mb-4">
-                      <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400 mb-2">
-                        <span>Progress</span>
-                        <span>{quest.progress}%</span>
-                      </div>
-                      <Progress value={quest.progress} className="h-2" />
-                    </div>
-
-                    {/* Stats */}
-                    <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-6">
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        {quest.duration}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <BookOpen className="w-4 h-4" />
-                        {quest.lessons} lessons
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Zap className="w-4 h-4" />
-                        {quest.xp} XP
-                      </div>
-                    </div>
-
-                    <Button
-                      className={`w-full rounded-2xl font-semibold ${
-                        quest.completed
-                          ? "bg-green-500 hover:bg-green-600"
-                          : "bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
-                      } shadow-lg transform transition-all duration-200 hover:scale-105`}
-                      onClick={() => handleQuestClick(quest)}
-                    >
-                      {quest.completed ? (
-                        "Completed"
-                      ) : quest.locked ? (
-                        "Locked"
-                      ) : (
-                        <>
-                          <Play className="w-4 h-4 mr-2" />
-                          Start Quest
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-          ))}
+        {/* Trending AI Toolkits Section */}
+        <div className="mt-12 border-t border-border pt-8">
+          <h2 className="text-2xl font-semibold mb-6">
+            🔥 Trending AI Toolkits
+          </h2>
+          <Toolkits />
         </div>
       </div>
-
-      {/* Bottom Navigation */}
       <BottomNavigation currentPage="learn" />
     </div>
   );

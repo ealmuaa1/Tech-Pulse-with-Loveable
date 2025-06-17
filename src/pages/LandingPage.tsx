@@ -99,34 +99,38 @@ const LandingPage = () => {
         {/* Today's Top Digests */}
         <div className="bg-card p-6 rounded-2xl shadow-md mb-6">
           <h2 className="text-lg font-semibold mb-4">Today's Top Digests</h2>
-          <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {digests.map((digest) => (
               <div
                 key={digest.id}
-                className="bg-white dark:bg-muted rounded-xl shadow overflow-hidden border border-border"
+                className="bg-white dark:bg-muted rounded-lg shadow-sm overflow-hidden border border-border h-64 flex flex-col"
               >
-                <img
-                  src={
-                    digestImages[digest.id] || "https://picsum.photos/800/600"
-                  }
-                  alt={digest.title}
-                  className="w-full h-48 object-cover rounded-t-lg"
-                  onError={(e) => {
-                    console.log("Image failed to load:", digest.title);
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src =
-                      "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDMwMCAyMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNFMEUwRTAiLz48dGV4dCB4PSI1MCIgeT0iMTAwIiBmb250LXNpemU9IjI0IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2NjYyI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+";
-                  }}
-                  onLoad={() =>
-                    console.log("Image loaded successfully:", digest.title)
-                  }
-                />
-                <div className="p-4">
-                  <span className="text-xs bg-muted px-2 py-1 rounded text-muted-foreground">
+                <div className="relative h-32">
+                  <img
+                    src={
+                      digestImages[digest.id] || "https://picsum.photos/800/600"
+                    }
+                    alt={digest.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      console.log("Image failed to load:", digest.title);
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src =
+                        "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDMwMCAyMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNFMEUwRTAiLz48dGV4dCB4PSI1MCIgeT0iMTAwIiBmb250LXNpemU9IjI0IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2NjYyI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+";
+                    }}
+                    onLoad={() =>
+                      console.log("Image loaded successfully:", digest.title)
+                    }
+                  />
+                  <span className="absolute top-2 left-2 text-xs bg-black/50 text-white px-2 py-1 rounded">
                     {digest.source}
                   </span>
-                  <h4 className="text-xl font-bold mt-2">{digest.title}</h4>
-                  <p className="text-sm text-muted-foreground mt-2">
+                </div>
+                <div className="p-4 flex-1 flex flex-col">
+                  <h4 className="text-lg font-bold line-clamp-2">
+                    {digest.title}
+                  </h4>
+                  <p className="text-sm text-muted-foreground mt-2 line-clamp-2 flex-1">
                     {digest.summary}
                   </p>
                   <div className="flex gap-2 mt-3">
@@ -134,11 +138,11 @@ const LandingPage = () => {
                       to={digest.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="bg-primary text-white px-3 py-1 rounded hover:bg-primary/90"
+                      className="bg-primary text-white px-3 py-1 rounded hover:bg-primary/90 text-sm"
                     >
                       Read More
                     </Link>
-                    <button className="bg-muted px-3 py-1 rounded">
+                    <button className="bg-muted px-3 py-1 rounded text-sm">
                       Discuss
                     </button>
                   </div>
