@@ -57,6 +57,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { supabase } from "@/lib/supabase";
+import { useUser } from "@supabase/auth-helpers-react";
 
 /**
  * Learning quests data
@@ -183,6 +185,34 @@ const achievementIcons: Record<string, any> = {
   default: Medal,
 };
 
+// Topic normalization mapping
+const topicAliases: Record<string, string> = {
+  AI: "Artificial Intelligence",
+  "Artificial Intelligence": "Artificial Intelligence",
+  "Machine Learning": "Machine Learning",
+  ML: "Machine Learning",
+  "Cyber Security": "Cybersecurity",
+  Cyber: "Cybersecurity",
+  ARVR: "AR/VR",
+  "Augmented Reality": "AR/VR",
+  "Virtual Reality": "AR/VR",
+  Cloud: "Cloud Computing",
+  "Dev Ops": "DevOps",
+  Data: "Data Science",
+  "Big Data": "Data Science",
+  Quantum: "Quantum Computing",
+  "Image Generation": "Image and Video Generation",
+  "Video Generation": "Image and Video Generation",
+  GenAI: "Image and Video Generation",
+  "Generative AI": "Image and Video Generation",
+};
+
+// Normalize topic name using aliases
+const normalizeTopic = (topic: string): string => {
+  const normalized = topicAliases[topic.trim()] || topic.trim();
+  return normalized.toLowerCase();
+};
+
 /**
  * Learn page component
  * Features:
@@ -198,6 +228,8 @@ const Learn = () => {
   const [currentFlashcardIndex, setCurrentFlashcardIndex] = useState(0);
   const [trendFlashcards, setTrendFlashcards] = useState<FlashcardType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [favoriteTopics, setFavoriteTopics] = useState<string[]>([]);
+  const user = useUser();
   const [progress, setProgress] = useState<LearningProgress>({
     userId: "user123",
     totalXp: 0,
@@ -207,6 +239,51 @@ const Learn = () => {
     achievements: achievements,
     streak: 0,
     lastActive: new Date(),
+  });
+
+  // Fetch user's favorite topics
+  useEffect(() => {
+    const fetchFavoriteTopics = async () => {
+      if (!user) return;
+
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("favorite_topics")
+          .eq("id", user.id)
+          .single();
+
+        if (!error && data) {
+          try {
+            const parsed = JSON.parse(data.favorite_topics);
+            setFavoriteTopics(Array.isArray(parsed) ? parsed : []);
+          } catch (e) {
+            setFavoriteTopics([]);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching favorite topics:", error);
+        toast.error("Failed to load your favorite topics");
+      }
+    };
+
+    fetchFavoriteTopics();
+  }, [user]);
+
+  // Filter learning quests based on favorite topics with normalization
+  const filteredLearningQuests = learningQuests.filter((quest) => {
+    if (favoriteTopics.length === 0) return true; // Show all quests if no topics selected
+
+    const normalizedQuestCategory = normalizeTopic(quest.category);
+    const normalizedQuestTitle = normalizeTopic(quest.title);
+
+    return favoriteTopics.some((topic) => {
+      const normalizedTopic = normalizeTopic(topic);
+      return (
+        normalizedQuestCategory.includes(normalizedTopic) ||
+        normalizedQuestTitle.includes(normalizedTopic)
+      );
+    });
   });
 
   useEffect(() => {
@@ -317,100 +394,108 @@ const Learn = () => {
 
         {/* Learning Quests */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {learningQuests.map((quest) => (
-            <div
+          {filteredLearningQuests.map((quest) => (
+            <motion.div
               key={quest.id}
-              className={`group transform transition-all duration-300 hover:scale-[1.02] ${
-                quest.locked ? "opacity-60" : ""
-              }`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileHover={{ scale: 1.02 }}
+              className="relative"
             >
-              <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-3xl shadow-lg border border-white/20 dark:border-gray-700/20 overflow-hidden">
-                {/* Image */}
-                <div className="relative h-48 overflow-hidden">
-                  <img
-                    src={quest.image}
-                    alt={quest.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                  <div className="absolute top-4 left-4">
-                    <Badge
-                      variant="secondary"
-                      className={`bg-gradient-to-r ${getDifficultyColor(
-                        quest.difficulty
-                      )} text-white backdrop-blur-sm shadow-md`}
-                    >
-                      {quest.difficulty}
-                    </Badge>
-                  </div>
-                  {quest.locked && (
-                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center">
-                      <div className="text-white text-center">
-                        <Target className="w-8 h-8 mx-auto mb-2" />
-                        <div className="font-semibold">Locked</div>
-                        <div className="text-sm">
-                          Complete previous quests to unlock
+              <Card
+                className={`overflow-hidden cursor-pointer transition-all duration-300 ${
+                  quest.locked ? "opacity-75" : ""
+                }`}
+                onClick={() => !quest.locked && handleQuestClick(quest)}
+              >
+                <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-3xl shadow-lg border border-white/20 dark:border-gray-700/20 overflow-hidden">
+                  {/* Image */}
+                  <div className="relative h-48 overflow-hidden">
+                    <img
+                      src={quest.image}
+                      alt={quest.title}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                    <div className="absolute top-4 left-4">
+                      <Badge
+                        variant="secondary"
+                        className={`bg-gradient-to-r ${getDifficultyColor(
+                          quest.difficulty
+                        )} text-white backdrop-blur-sm shadow-md`}
+                      >
+                        {quest.difficulty}
+                      </Badge>
+                    </div>
+                    {quest.locked && (
+                      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                        <div className="text-white text-center">
+                          <Target className="w-8 h-8 mx-auto mb-2" />
+                          <div className="font-semibold">Locked</div>
+                          <div className="text-sm">
+                            Complete previous quests to unlock
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-purple-700 dark:group-hover:text-purple-400 transition-colors duration-200">
-                    {quest.title}
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
-                    {quest.description}
-                  </p>
-
-                  {/* Progress */}
-                  <div className="mb-4">
-                    <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400 mb-2">
-                      <span>Progress</span>
-                      <span>{quest.progress}%</span>
-                    </div>
-                    <Progress value={quest.progress} className="h-2" />
-                  </div>
-
-                  {/* Stats */}
-                  <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-6">
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" />
-                      {quest.duration}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <BookOpen className="w-4 h-4" />
-                      {quest.lessons} lessons
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Zap className="w-4 h-4" />
-                      {quest.xp} XP
-                    </div>
-                  </div>
-
-                  <Button
-                    className={`w-full rounded-2xl font-semibold ${
-                      quest.completed
-                        ? "bg-green-500 hover:bg-green-600"
-                        : "bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
-                    } shadow-lg transform transition-all duration-200 hover:scale-105`}
-                    onClick={() => handleQuestClick(quest)}
-                  >
-                    {quest.completed ? (
-                      "Completed"
-                    ) : quest.locked ? (
-                      "Locked"
-                    ) : (
-                      <>
-                        <Play className="w-4 h-4 mr-2" />
-                        Start Quest
-                      </>
                     )}
-                  </Button>
+                  </div>
+
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-purple-700 dark:group-hover:text-purple-400 transition-colors duration-200">
+                      {quest.title}
+                    </h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
+                      {quest.description}
+                    </p>
+
+                    {/* Progress */}
+                    <div className="mb-4">
+                      <div className="flex justify-between text-sm text-gray-500 dark:text-gray-400 mb-2">
+                        <span>Progress</span>
+                        <span>{quest.progress}%</span>
+                      </div>
+                      <Progress value={quest.progress} className="h-2" />
+                    </div>
+
+                    {/* Stats */}
+                    <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mb-6">
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        {quest.duration}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <BookOpen className="w-4 h-4" />
+                        {quest.lessons} lessons
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Zap className="w-4 h-4" />
+                        {quest.xp} XP
+                      </div>
+                    </div>
+
+                    <Button
+                      className={`w-full rounded-2xl font-semibold ${
+                        quest.completed
+                          ? "bg-green-500 hover:bg-green-600"
+                          : "bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+                      } shadow-lg transform transition-all duration-200 hover:scale-105`}
+                      onClick={() => handleQuestClick(quest)}
+                    >
+                      {quest.completed ? (
+                        "Completed"
+                      ) : quest.locked ? (
+                        "Locked"
+                      ) : (
+                        <>
+                          <Play className="w-4 h-4 mr-2" />
+                          Start Quest
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </div>
+              </Card>
+            </motion.div>
           ))}
         </div>
       </div>

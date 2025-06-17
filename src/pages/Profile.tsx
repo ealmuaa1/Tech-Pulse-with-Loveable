@@ -14,6 +14,8 @@ import {
   Lightbulb,
   ChevronRight,
   ArrowLeft,
+  Check,
+  Loader2,
 } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { useEffect, useState, useMemo } from "react";
@@ -22,6 +24,10 @@ import { SettingsModal } from "@/components/ui/settings-modal";
 import { UserSettings, loadUserSettings, saveSettings } from "@/lib/settings";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import TopicSelector from "@/components/TopicSelector";
+import { supabase } from "@/lib/supabase";
+import { useUser } from "@supabase/auth-helpers-react";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Achievement {
   name: string;
@@ -35,6 +41,19 @@ interface UserStats {
   questsCompleted: number;
   savedIdeas: number;
 }
+
+const ALL_TOPICS = [
+  "Artificial intelligence",
+  "Image and Video Generation",
+  "Machine Learning",
+  "Blockchain",
+  "Quantum Computing",
+  "Cloud Computing",
+  "Cybersecurity",
+  "AR/VR",
+  "DevOps",
+  "Data Science",
+];
 
 const interests = [
   "AI",
@@ -68,7 +87,6 @@ const achievements: Achievement[] = [
 ];
 
 const Profile: React.FC = () => {
-  const [user, setUser] = useState<FirebaseUser | null>(null);
   const [settings, setSettings] = useState<UserSettings>({
     darkMode: false,
     notifications: true,
@@ -87,11 +105,60 @@ const Profile: React.FC = () => {
   const [helpModalOpen, setHelpModalOpen] = useState(false);
 
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [favoriteTopics, setFavoriteTopics] = useState<string[]>([]);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  useEffect(() => {
+    const fetchUserAndProfile = async () => {
+      const {
+        data: { user: supabaseUser },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError) {
+        console.error("Error fetching user:", userError);
+        setLoading(false);
+        return;
+      }
+
+      if (supabaseUser) {
+        setUser(supabaseUser);
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("favorite_topics")
+          .eq("id", supabaseUser.id)
+          .single();
+
+        if (!error && data) {
+          try {
+            const parsed = JSON.parse(data.favorite_topics);
+            setFavoriteTopics(Array.isArray(parsed) ? parsed : []);
+          } catch (e) {
+            setFavoriteTopics([]);
+          }
+        } else {
+          // Upsert a profile if it doesn't exist
+          await supabase.from("profiles").upsert({
+            id: supabaseUser.id,
+            email: supabaseUser.email,
+            full_name:
+              supabaseUser.user_metadata?.full_name || supabaseUser.email,
+            favorite_topics: JSON.stringify([]),
+          });
+        }
+      }
+      setLoading(false);
+    };
+    fetchUserAndProfile();
+  }, []);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(
       async (currentUser) => {
-        setUser(currentUser);
         if (currentUser) {
           const userSettings = await loadUserSettings(currentUser.uid);
           setSettings(userSettings);
@@ -126,6 +193,45 @@ const Profile: React.FC = () => {
 
   const memoizedInterests = useMemo(() => interests, []);
   const memoizedAchievements = useMemo(() => achievements, []);
+
+  const savePreferences = async () => {
+    if (!user) return;
+
+    setIsSaving(true);
+    setSaveSuccess(false);
+
+    try {
+      const { error } = await supabase.from("profiles").upsert({
+        id: user.id,
+        favorite_topics: JSON.stringify(favoriteTopics),
+      });
+
+      if (error) throw error;
+
+      setSaveSuccess(true);
+      toast({
+        title: "Preferences saved",
+        description: "Your favorite topics have been updated successfully.",
+      });
+
+      // Reset success state after animation
+      setTimeout(() => {
+        setSaveSuccess(false);
+      }, 2000);
+    } catch (error) {
+      console.error("Error saving preferences:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save preferences. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (loading) return <div>Loading profile...</div>;
+  if (!user) return <div>Please log in</div>;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 pb-20">
@@ -170,182 +276,196 @@ const Profile: React.FC = () => {
             </motion.div>
             <div>
               <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">
-                {user?.displayName || "Guest User"}
+                {user?.user_metadata?.full_name || "Guest User"}
               </h2>
-              <p className="text-gray-600 dark:text-gray-400 text-lg">
-                {user?.email || "No email"}
-              </p>
+              {user && (
+                <p className="text-gray-500 dark:text-gray-400 text-sm">
+                  {user.email}
+                </p>
+              )}
             </div>
           </div>
         </motion.div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {[
-            {
-              icon: Sparkles,
-              value: userStats.streak,
-              label: "Day Streak",
-              color: "text-orange-500 dark:text-orange-400",
-            },
-            {
-              icon: BookOpen,
-              value: userStats.totalDigests,
-              label: "Digests Read",
-              color: "text-blue-500 dark:text-blue-400",
-            },
-            {
-              icon: Trophy,
-              value: userStats.questsCompleted,
-              label: "Quests Done",
-              color: "text-emerald-500 dark:text-emerald-400",
-            },
-            {
-              icon: Lightbulb,
-              value: userStats.savedIdeas,
-              label: "Ideas Saved",
-              color: "text-purple-500 dark:text-purple-400",
-            },
-          ].map((stat, index) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              whileHover={{ y: -5 }}
-              className="bg-white dark:bg-gray-800 rounded-2xl p-6 text-center shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all duration-300"
-            >
-              <div className={`text-3xl font-bold ${stat.color} mb-2`}>
-                {stat.value}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center justify-center gap-2">
-                <stat.icon className="w-4 h-4" />
-                {stat.label}
-              </div>
-            </motion.div>
-          ))}
-        </div>
+        {/* Favorite Topics Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all duration-300"
+        >
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Favorite Topics
+              </h3>
+              <Button
+                onClick={savePreferences}
+                disabled={isSaving}
+                className={`relative ${
+                  saveSuccess
+                    ? "bg-green-500 hover:bg-green-600"
+                    : "bg-primary hover:bg-primary/90"
+                } text-white transition-all duration-300`}
+              >
+                <motion.div
+                  initial={false}
+                  animate={{
+                    scale: saveSuccess ? [1, 1.2, 1] : 1,
+                    opacity: saveSuccess ? [1, 0.8, 1] : 1,
+                  }}
+                  transition={{ duration: 0.3 }}
+                  className="flex items-center gap-2"
+                >
+                  {isSaving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : saveSuccess ? (
+                    <Check className="w-4 h-4" />
+                  ) : null}
+                  {isSaving
+                    ? "Saving..."
+                    : saveSuccess
+                    ? "Saved!"
+                    : "Save Preferences"}
+                </motion.div>
+              </Button>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400">
+              Select the topics you're most interested in to personalize your
+              experience
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <TopicSelector
+                favoriteTopics={favoriteTopics}
+                onChange={setFavoriteTopics}
+              />
+            </div>
+          </div>
+        </motion.div>
 
-        {/* Interests */}
+        {/* User Stats */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+        >
+          {/* Streak */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center text-center">
+            <Sparkles className="w-10 h-10 text-yellow-500 mb-3" />
+            <div className="text-3xl font-bold text-gray-900 dark:text-white">
+              {userStats.streak}
+            </div>
+            <p className="text-gray-600 dark:text-gray-400">Day Streak</p>
+          </div>
+
+          {/* Digests Read */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center text-center">
+            <BookOpen className="w-10 h-10 text-blue-500 mb-3" />
+            <div className="text-3xl font-bold text-gray-900 dark:text-white">
+              {userStats.totalDigests}
+            </div>
+            <p className="text-gray-600 dark:text-gray-400">Digests Read</p>
+          </div>
+
+          {/* Quests Completed */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all duration-300 flex flex-col items-center justify-center text-center">
+            <Trophy className="w-10 h-10 text-green-500 mb-3" />
+            <div className="text-3xl font-bold text-gray-900 dark:text-white">
+              {userStats.questsCompleted}
+            </div>
+            <p className="text-gray-600 dark:text-gray-400">Quests Completed</p>
+          </div>
+        </motion.div>
+
+        {/* Interests Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
           className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all duration-300"
         >
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-blue-500 dark:text-blue-400" />
+          <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-purple-700 dark:from-white dark:to-purple-400 mb-6">
             Your Interests
-          </h3>
+          </h2>
           <div className="flex flex-wrap gap-3 mb-6">
             {memoizedInterests.map((interest) => (
-              <motion.div
+              <Badge
                 key={interest}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                variant="outline"
+                className="px-3 py-1 text-sm bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 rounded-full"
               >
-                <Badge
-                  variant="secondary"
-                  className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full px-4 py-1.5 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors duration-200"
-                >
-                  {interest}
-                </Badge>
-              </motion.div>
+                {interest}
+              </Badge>
             ))}
           </div>
+          <TopicSelector
+            favoriteTopics={favoriteTopics}
+            onChange={setFavoriteTopics}
+          />
           <Button
-            variant="outline"
-            size="sm"
-            className="rounded-full font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
+            onClick={savePreferences}
+            className="mt-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md hover:from-purple-700 hover:to-pink-700 transition-all duration-300"
           >
-            <Settings className="w-4 h-4 mr-2" />
-            Customize Interests
+            Save Preferences
           </Button>
         </motion.div>
 
-        {/* Achievements */}
+        {/* Achievements Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
           className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all duration-300"
         >
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-yellow-500 dark:text-yellow-400" />
-            Achievements
-          </h3>
-          <div className="grid gap-4">
+          <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-purple-700 dark:from-white dark:to-purple-400 mb-6">
+            Your Achievements
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {memoizedAchievements.map((achievement, index) => (
               <motion.div
-                key={achievement.name}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
-                whileHover={{ x: 5 }}
-                className="flex items-center gap-4 p-4 bg-yellow-50 dark:bg-yellow-900/30 rounded-xl border border-yellow-200 dark:border-yellow-800 hover:bg-yellow-100 dark:hover:bg-yellow-900/50 transition-colors duration-200"
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="bg-gray-50 dark:bg-gray-700 rounded-xl p-5 flex items-start gap-4 shadow-sm border border-gray-100 dark:border-gray-600"
               >
-                <div className="text-3xl">{achievement.icon}</div>
-                <div className="flex-1">
-                  <div className="font-semibold text-yellow-900 dark:text-yellow-200">
+                <div className="flex-shrink-0 text-3xl">{achievement.icon}</div>
+                <div>
+                  <h3 className="font-semibold text-gray-900 dark:text-white mb-1">
                     {achievement.name}
-                  </div>
-                  <div className="text-sm text-yellow-700 dark:text-yellow-300">
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
                     {achievement.description}
-                  </div>
+                  </p>
                 </div>
               </motion.div>
             ))}
           </div>
         </motion.div>
 
-        {/* Settings */}
+        {/* Settings Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
           className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all duration-300"
         >
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-            <Settings className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-purple-700 dark:from-white dark:to-purple-400 mb-6">
             Settings
-          </h3>
+          </h2>
           <div className="space-y-6">
-            <motion.div
-              whileHover={{ x: 5 }}
-              className="flex items-center justify-between p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
-            >
-              <div className="flex items-center gap-4">
-                <Bell className="w-5 h-5 text-blue-500 dark:text-blue-400" />
+            {/* Dark Mode Toggle */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Moon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                 <div>
-                  <div className="font-medium text-gray-900 dark:text-white">
-                    Push Notifications
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Get notified about new content
-                  </div>
-                </div>
-              </div>
-              <Switch
-                checked={settings.notifications}
-                onCheckedChange={(checked) =>
-                  handleSettingChange("notifications", checked)
-                }
-              />
-            </motion.div>
-
-            <motion.div
-              whileHover={{ x: 5 }}
-              className="flex items-center justify-between p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
-            >
-              <div className="flex items-center gap-4">
-                <Moon className="w-5 h-5 text-purple-500 dark:text-purple-400" />
-                <div>
-                  <div className="font-medium text-gray-900 dark:text-white">
+                  <h3 className="font-medium text-gray-900 dark:text-white">
                     Dark Mode
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Switch to dark theme
-                  </div>
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                    Toggle between light and dark themes.
+                  </p>
                 </div>
               </div>
               <Switch
@@ -354,21 +474,40 @@ const Profile: React.FC = () => {
                   handleSettingChange("darkMode", checked)
                 }
               />
-            </motion.div>
+            </div>
 
-            <motion.div
-              whileHover={{ x: 5 }}
-              className="flex items-center justify-between p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
-            >
-              <div className="flex items-center gap-4">
-                <UserIcon className="w-5 h-5 text-green-500 dark:text-green-400" />
+            {/* Notifications Toggle */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Bell className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                 <div>
-                  <div className="font-medium text-gray-900 dark:text-white">
+                  <h3 className="font-medium text-gray-900 dark:text-white">
+                    Notifications
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                    Receive important updates and alerts.
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={settings.notifications}
+                onCheckedChange={(checked) =>
+                  handleSettingChange("notifications", checked)
+                }
+              />
+            </div>
+
+            {/* Email Updates Toggle */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Lightbulb className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                <div>
+                  <h3 className="font-medium text-gray-900 dark:text-white">
                     Email Updates
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Receive weekly digests
-                  </div>
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                    Get the latest tech digests and news in your inbox.
+                  </p>
                 </div>
               </div>
               <Switch
@@ -377,120 +516,85 @@ const Profile: React.FC = () => {
                   handleSettingChange("emailUpdates", checked)
                 }
               />
-            </motion.div>
-
-            {/* Additional Settings Buttons */}
-            <div className="pt-4 space-y-3">
-              {[
-                {
-                  icon: UserIcon,
-                  label: "Account Settings",
-                  color: "text-blue-500 dark:text-blue-400",
-                  onClick: () => setAccountModalOpen(true),
-                },
-                {
-                  icon: Shield,
-                  label: "Privacy Settings",
-                  color: "text-green-500 dark:text-green-400",
-                  onClick: () => setPrivacyModalOpen(true),
-                },
-                {
-                  icon: HelpCircle,
-                  label: "Help & Support",
-                  color: "text-purple-500 dark:text-purple-400",
-                  onClick: () => setHelpModalOpen(true),
-                },
-              ].map((button) => (
-                <motion.div
-                  key={button.label}
-                  whileHover={{ x: 5 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
-                    onClick={button.onClick}
-                  >
-                    <button.icon className={`w-4 h-4 mr-2 ${button.color}`} />
-                    {button.label}
-                    <ChevronRight className="w-4 h-4 ml-auto text-gray-400" />
-                  </Button>
-                </motion.div>
-              ))}
             </div>
+          </div>
+        </motion.div>
+
+        {/* Account and Privacy Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all duration-300"
+        >
+          <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-purple-700 dark:from-white dark:to-purple-400 mb-6">
+            Account & Privacy
+          </h2>
+          <div className="space-y-4">
+            {/* Manage Account */}
+            <Button
+              variant="ghost"
+              className="w-full flex justify-between items-center px-4 py-3 rounded-lg text-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              onClick={() => setAccountModalOpen(true)}
+            >
+              <span>Manage Account</span>
+              <ChevronRight className="w-5 h-5 text-gray-500" />
+            </Button>
+
+            {/* Privacy Settings */}
+            <Button
+              variant="ghost"
+              className="w-full flex justify-between items-center px-4 py-3 rounded-lg text-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              onClick={() => setPrivacyModalOpen(true)}
+            >
+              <span>Privacy Settings</span>
+              <Shield className="w-5 h-5 text-gray-500" />
+            </Button>
+
+            {/* Help & Support */}
+            <Button
+              variant="ghost"
+              className="w-full flex justify-between items-center px-4 py-3 rounded-lg text-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              onClick={() => setHelpModalOpen(true)}
+            >
+              <span>Help & Support</span>
+              <HelpCircle className="w-5 h-5 text-gray-500" />
+            </Button>
+
+            {/* Logout */}
+            <Button
+              variant="destructive"
+              className="w-full px-4 py-3 rounded-lg text-lg"
+              onClick={() => auth.signOut()}
+            >
+              Logout
+            </Button>
           </div>
         </motion.div>
       </div>
 
       {/* Modals */}
-      <AnimatePresence>
-        <SettingsModal
-          isOpen={accountModalOpen}
-          onClose={() => setAccountModalOpen(false)}
-          title="Account Settings"
-        >
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Manage your account settings, including email preferences and
-              password changes.
-            </p>
-            <Button className="w-full hover:bg-blue-600 transition-colors duration-200">
-              Change Password
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
-            >
-              Update Email
-            </Button>
-          </div>
-        </SettingsModal>
-
-        <SettingsModal
-          isOpen={privacyModalOpen}
-          onClose={() => setPrivacyModalOpen(false)}
-          title="Privacy Settings"
-        >
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Control your privacy preferences and data sharing settings.
-            </p>
-            <Button
-              variant="outline"
-              className="w-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
-            >
-              Download My Data
-            </Button>
-            <Button
-              variant="destructive"
-              className="w-full hover:bg-red-600 transition-colors duration-200"
-            >
-              Delete Account
-            </Button>
-          </div>
-        </SettingsModal>
-
-        <SettingsModal
-          isOpen={helpModalOpen}
-          onClose={() => setHelpModalOpen(false)}
-          title="Help & Support"
-        >
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Get help with your account or contact our support team.
-            </p>
-            <Button className="w-full hover:bg-blue-600 transition-colors duration-200">
-              Contact Support
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200"
-            >
-              View FAQ
-            </Button>
-          </div>
-        </SettingsModal>
-      </AnimatePresence>
+      <SettingsModal
+        isOpen={accountModalOpen}
+        onClose={() => setAccountModalOpen(false)}
+        title="Manage Account"
+      >
+        <p>Account management options will be available here.</p>
+      </SettingsModal>
+      <SettingsModal
+        isOpen={privacyModalOpen}
+        onClose={() => setPrivacyModalOpen(false)}
+        title="Privacy Settings"
+      >
+        <p>Privacy settings options will be available here.</p>
+      </SettingsModal>
+      <SettingsModal
+        isOpen={helpModalOpen}
+        onClose={() => setHelpModalOpen(false)}
+        title="Help & Support"
+      >
+        <p>Help and support content will be displayed here.</p>
+      </SettingsModal>
     </div>
   );
 };

@@ -1,16 +1,148 @@
-require("dotenv").config();
+import "dotenv/config";
 console.log("DEEPSEEK_API_KEY at startup:", process.env.DEEPSEEK_API_KEY);
-const express = require("express");
-const fetch = require("node-fetch");
-const cors = require("cors");
+import express from "express";
+import fetch from "node-fetch";
+import cors from "cors";
+import cron from "node-cron"; // Import node-cron
+import OpenAI from "openai";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// In-memory cache for daily trends, updated every 24 hours via cron job
+let dailyTrends = [];
+
+// Utility to generate a simple unique ID for mock data
+const generateUniqueId = () => Math.random().toString(36).substring(2, 15);
+
+/**
+ * Placeholder for fetching from Glimpse API.
+ * Replace with your actual Glimpse API integration.
+ * Expected data format from Glimpse API (example):
+ * [{
+ *   name: string,
+ *   category: string,
+ *   summary: string,
+ *   url: string,
+ *   score: number // Add a score for sorting/ranking
+ * }]
+ */
+const fetchFromGlimpse = async () => {
+  console.log("Simulating fetch from Glimpse API...");
+  // IMPORTANT: Replace this mock data with actual API calls to Glimpse.
+  return [
+    {
+      id: generateUniqueId(),
+      name: "Generative AI Ethics",
+      category: "AI",
+      summary: "Debates around responsible AI development and deployment.",
+      url: "https://example.com/generative-ai-ethics",
+      score: 85,
+    },
+    {
+      id: generateUniqueId(),
+      name: "Web3 Gaming Innovations",
+      category: "Blockchain",
+      summary: "The rise of play-to-earn models and NFT integration in games.",
+      url: "https://example.com/web3-gaming",
+      score: 78,
+    },
+  ];
+};
+
+/**
+ * Placeholder for fetching from Exploding Topics API.
+ * Replace with your actual Exploding Topics API integration.
+ * Expected data format from Exploding Topics API (example):
+ * [{
+ *   name: string,
+ *   category: string,
+ *   summary: string,
+ *   url: string,
+ *   score: number // Add a score for sorting/ranking
+ * }]
+ */
+const fetchFromExplodingTopics = async () => {
+  console.log("Simulating fetch from Exploding Topics API...");
+  // IMPORTANT: Replace this mock data with actual API calls to Exploding Topics.
+  return [
+    {
+      id: generateUniqueId(),
+      name: "AI in Drug Discovery",
+      category: "Healthcare AI",
+      summary: "Accelerating pharmaceutical development with AI algorithms.",
+      url: "https://example.com/ai-drug-discovery",
+      score: 92,
+    },
+    {
+      id: generateUniqueId(),
+      name: "Sustainable Tech Solutions",
+      category: "Environment",
+      summary:
+        "Innovations focusing on eco-friendly technology and circular economy.",
+      url: "https://example.com/sustainable-tech",
+      score: 88,
+    },
+  ];
+};
+
+// Function to fetch, parse, deduplicate, and store trends
+const fetchAndStoreTrendingTopics = async () => {
+  console.log("Fetching and storing daily trends...");
+  let fetchedTopics = [];
+
+  try {
+    const glimpseData = await fetchFromGlimpse();
+    fetchedTopics = fetchedTopics.concat(glimpseData);
+  } catch (error) {
+    console.error("Error fetching from Glimpse API:", error);
+  }
+
+  try {
+    const explodingTopicsData = await fetchFromExplodingTopics();
+    fetchedTopics = fetchedTopics.concat(explodingTopicsData);
+  } catch (error) {
+    console.error("Error fetching from Exploding Topics API:", error);
+  }
+
+  // Transform to desired output format { topic, source, score }
+  const transformedTopics = fetchedTopics.map((t) => ({
+    topic: t.name, // Using 'name' as 'topic'
+    source: t.source || "Unknown",
+    score: t.score || 0,
+  }));
+
+  // Deduplicate topics by name (which is now 'topic') and keep only top 10-20, sorted by score
+  const uniqueAndSortedTopics = Array.from(
+    new Map(transformedTopics.map((topic) => [topic.topic, topic])).values()
+  ).sort((a, b) => b.score - a.score); // Sort by score descending
+
+  // Limit to top 20 (or fewer if less available)
+  dailyTrends = uniqueAndSortedTopics.slice(0, 20);
+  console.log(`Fetched and stored ${dailyTrends.length} trending topics.`);
+  // console.log("Current dailyTrends:", dailyTrends); // For debugging
+};
+
+// Schedule the function to run daily at 2 AM New York time
+// This effectively acts as a 24-hour cache.
+cron.schedule(
+  "0 2 * * *",
+  () => {
+    fetchAndStoreTrendingTopics();
+  },
+  {
+    scheduled: true,
+    timezone: "America/New_York", // Set your desired timezone
+  }
+);
+
+// Run the function immediately on server start to populate initial data
+fetchAndStoreTrendingTopics();
+
 // Configure CORS to allow requests from the frontend
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://localhost:5173"], // Add your frontend URLs
+    origin: ["http://localhost:3000", "http://localhost:5173"], // Allow frontend from localhost:3000 and 5173
     methods: ["GET", "POST"],
     credentials: true,
   })
@@ -41,7 +173,6 @@ app.post("/api/deepseek/lessons", async (req, res) => {
   );
 
   try {
-    const OpenAI = require("openai"); // Import OpenAI here to ensure it's server-side
     const openai = new OpenAI({
       baseURL: "https://api.deepseek.com",
       apiKey: process.env.DEEPSEEK_API_KEY, // Directly access process.env here
@@ -141,6 +272,11 @@ app.get("/api/images/search", async (req, res) => {
       .status(500)
       .json({ error: "Internal server error while fetching image." });
   }
+});
+
+// New API endpoint to serve daily trends in the requested format
+app.get("/api/daily-trends", (req, res) => {
+  res.json(dailyTrends);
 });
 
 app.listen(PORT, () => {
