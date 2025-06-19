@@ -1,5 +1,4 @@
-import React from "react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -199,22 +198,32 @@ const topicAliases: Record<string, string> = {
   ARVR: "AR/VR",
   "Augmented Reality": "AR/VR",
   "Virtual Reality": "AR/VR",
-  Cloud: "Cloud Computing",
-  "Dev Ops": "DevOps",
-  Data: "Data Science",
-  "Big Data": "Data Science",
-  Quantum: "Quantum Computing",
-  "Image Generation": "Image and Video Generation",
-  "Video Generation": "Image and Video Generation",
-  GenAI: "Image and Video Generation",
-  "Generative AI": "Image and Video Generation",
 };
 
-// Normalize topic name using aliases
+/**
+ * Normalize topic names for consistent matching
+ */
 const normalizeTopic = (topic: string): string => {
-  const normalized = topicAliases[topic.trim()] || topic.trim();
-  return normalized.toLowerCase();
+  const normalized = topicAliases[topic] || topic;
+  return normalized.toLowerCase().trim();
 };
+
+/**
+ * Shuffle array function
+ */
+function shuffle(array) {
+  let currentIndex = array.length,
+    randomIndex;
+  while (currentIndex !== 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex],
+      array[currentIndex],
+    ];
+  }
+  return array;
+}
 
 /**
  * Learn page component
@@ -226,123 +235,33 @@ const normalizeTopic = (topic: string): string => {
  * - Difficulty indicators
  */
 const Learn = () => {
-  const { trend } = useParams();
-  const navigate = useNavigate();
-  const [currentFlashcardIndex, setCurrentFlashcardIndex] = useState(0);
-  const [trendFlashcards, setTrendFlashcards] = useState<FlashcardType[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [favoriteTopics, setFavoriteTopics] = useState<string[]>([]);
-  const user = useUser();
-  const [progress, setProgress] = useState<LearningProgress>({
-    userId: "user123",
-    totalXp: 0,
-    level: 1,
-    completedQuizzes: [],
-    completedFlashcards: [],
-    achievements: achievements,
-    streak: 0,
-    lastActive: new Date(),
-  });
-  const { dailyTrends, loadingTrends, errorTrends } = useTrends();
-
-  // Fetch user's favorite topics
-  useEffect(() => {
-    const fetchFavoriteTopics = async () => {
-      if (!user) return;
-
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("favorite_topics")
-          .eq("id", user.id)
-          .single();
-
-        if (!error && data) {
-          try {
-            const parsed = JSON.parse(data.favorite_topics);
-            setFavoriteTopics(Array.isArray(parsed) ? parsed : []);
-          } catch (e) {
-            setFavoriteTopics([]);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching favorite topics:", error);
-        toast.error("Failed to load your favorite topics");
-      }
-    };
-
-    fetchFavoriteTopics();
-  }, [user]);
-
-  // Filter learning quests based on favorite topics with normalization
-  const filteredLearningQuests = learningQuests.filter((quest) => {
-    if (favoriteTopics.length === 0) return true; // Show all quests if no topics selected
-
-    const normalizedQuestCategory = normalizeTopic(quest.category);
-    const normalizedQuestTitle = normalizeTopic(quest.title);
-
-    return favoriteTopics.some((topic) => {
-      const normalizedTopic = normalizeTopic(topic);
-      return (
-        normalizedQuestCategory.includes(normalizedTopic) ||
-        normalizedQuestTitle.includes(normalizedTopic)
-      );
-    });
-  });
+  const [trends, setTrends] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const loadFlashcards = async () => {
-      setIsLoading(true);
+    async function fetchTrends() {
+      setLoading(true);
+      setError("");
       try {
-        if (trend) {
-          const storedFlashcards = localStorage.getItem(`flashcards_${trend}`);
-          if (storedFlashcards) {
-            setTrendFlashcards(JSON.parse(storedFlashcards));
-          } else {
-            const category = trend.toLowerCase().includes("security")
-              ? "Cybersecurity"
-              : "Tech";
-            const categoryFlashcards = defaultFlashcards.filter(
-              (card) => card.category === category
-            );
-            setTrendFlashcards(categoryFlashcards);
-          }
-        }
-      } catch (error) {
-        console.error("Error loading flashcards:", error);
-        toast.error("Failed to load flashcards");
+        console.log("Fetching trends for Learn page...");
+        const res = await fetch(
+          "http://localhost:4000/api/trends?source=learn"
+        );
+        if (!res.ok) throw new Error("Failed to fetch trending topics");
+        const data = await res.json();
+        console.log("Received trends data:", data);
+        setTrends(data);
+      } catch (err) {
+        console.error("Error fetching trends:", err);
+        setError("Failed to load trending topics.");
+        setTrends([]);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
-    };
-
-    loadFlashcards();
-  }, [trend]);
-
-  // Get color gradient based on difficulty level
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "Beginner":
-        return "from-green-400 to-emerald-500";
-      case "Intermediate":
-        return "from-yellow-400 to-orange-500";
-      case "Advanced":
-        return "from-red-400 to-pink-500";
-      default:
-        return "from-gray-400 to-gray-500";
     }
-  };
-
-  // Handle quest click
-  const handleQuestClick = (quest: (typeof learningQuests)[0]) => {
-    if (quest.locked) {
-      toast.info("Complete previous quests to unlock this one!", {
-        duration: 2000,
-      });
-      return;
-    }
-    navigate(`/quest/${quest.id}`);
-  };
+    fetchTrends();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-20">
@@ -379,46 +298,54 @@ const Learn = () => {
         </div>
 
         {/* Today's Top Digests */}
-        <div className="bg-card p-6 rounded-2xl shadow-md mb-6">
-          <h2 className="text-lg font-semibold mb-4">Today's Top Digests</h2>
-          <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-            {dailyTrends.map((digest) => (
+        <h2 className="text-lg font-semibold mb-4">Today's Top Digests</h2>
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[...Array(4)].map((_, idx) => (
               <div
-                key={digest.id}
-                className="bg-white dark:bg-muted rounded-xl shadow overflow-hidden border border-border"
+                key={idx}
+                className="animate-pulse bg-muted rounded-xl h-64"
+              />
+            ))}
+          </div>
+        ) : error ? (
+          <div className="text-center text-red-500 font-semibold mb-4">
+            {error}
+          </div>
+        ) : trends && trends.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {trends.map((trend, idx) => (
+              <div
+                key={trend.id || trend.title + idx}
+                className="bg-white dark:bg-muted rounded-xl shadow overflow-hidden border border-border flex flex-col justify-between h-64 hover:shadow-lg transition-shadow"
               >
                 <img
-                  src={digest.image_url || "https://picsum.photos/800/600"}
-                  alt={digest.title}
-                  className="w-full h-48 object-cover rounded-t-lg"
-                  onError={(e) => {
-                    console.log("Image failed to load:", digest.title);
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src =
-                      "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDMwMCAyMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNFMEUwRTAiLz48dGV4dCB4PSI1MCIgeT0iMTAwIiBmb250LXNpemU9IjI0IiBmb250LXdlaWdodD0iYm9sZCIgZmlsbD0iI2NjYyI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+";
-                  }}
-                  onLoad={() =>
-                    console.log("Image loaded successfully:", digest.title)
+                  src={
+                    trend.image ||
+                    "https://via.placeholder.com/400x200?text=No+Image"
                   }
+                  alt={trend.title}
+                  className="w-full h-40 object-cover rounded-t-md"
+                  onError={(e) => {
+                    e.currentTarget.src =
+                      "https://via.placeholder.com/400x200?text=Image+Not+Available";
+                  }}
                 />
-                <div className="p-4">
-                  <span className="text-xs bg-muted px-2 py-1 rounded text-muted-foreground">
-                    {digest.source}
-                  </span>
-                  <h4 className="text-xl font-bold mt-2">{digest.title}</h4>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {digest.summary}
+                <div className="p-4 flex-1 flex flex-col justify-between">
+                  <h4 className="text-xl font-bold mb-2">{trend.title}</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {trend.summary || "No summary available."}
                   </p>
-                  <div className="flex gap-2 mt-3">
-                    <Link
-                      to={digest.url || "#"}
+                  <div className="flex gap-2 mt-auto">
+                    <a
+                      href={trend.url || "#"}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="bg-primary text-white px-3 py-1 rounded hover:bg-primary/90"
                     >
                       Read More
-                    </Link>
-                    <button className="bg-muted px-3 py-1 rounded">
+                    </a>
+                    <button className="bg-muted px-3 py-1 rounded hover:bg-muted/80">
                       Discuss
                     </button>
                   </div>
@@ -426,7 +353,11 @@ const Learn = () => {
               </div>
             ))}
           </div>
-        </div>
+        ) : (
+          <div className="text-center text-muted-foreground">
+            No trending topics available at the moment.
+          </div>
+        )}
 
         {/* Trending AI Toolkits Section */}
         <div className="mt-12 border-t border-border pt-8">

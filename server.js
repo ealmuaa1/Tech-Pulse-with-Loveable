@@ -5,6 +5,10 @@ import fetch from "node-fetch";
 import cors from "cors";
 import cron from "node-cron"; // Import node-cron
 import OpenAI from "openai";
+import {
+  updateDailyTrends,
+  getDailyTrendsWithLessons,
+} from "./src/lib/trendFetcher";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -12,119 +16,20 @@ const PORT = process.env.PORT || 5000;
 // In-memory cache for daily trends, updated every 24 hours via cron job
 let dailyTrends = [];
 
-// Utility to generate a simple unique ID for mock data
-const generateUniqueId = () => Math.random().toString(36).substring(2, 15);
-
-/**
- * Placeholder for fetching from Glimpse API.
- * Replace with your actual Glimpse API integration.
- * Expected data format from Glimpse API (example):
- * [{
- *   name: string,
- *   category: string,
- *   summary: string,
- *   url: string,
- *   score: number // Add a score for sorting/ranking
- * }]
- */
-const fetchFromGlimpse = async () => {
-  console.log("Simulating fetch from Glimpse API...");
-  // IMPORTANT: Replace this mock data with actual API calls to Glimpse.
-  return [
-    {
-      id: generateUniqueId(),
-      name: "Generative AI Ethics",
-      category: "AI",
-      summary: "Debates around responsible AI development and deployment.",
-      url: "https://example.com/generative-ai-ethics",
-      score: 85,
-    },
-    {
-      id: generateUniqueId(),
-      name: "Web3 Gaming Innovations",
-      category: "Blockchain",
-      summary: "The rise of play-to-earn models and NFT integration in games.",
-      url: "https://example.com/web3-gaming",
-      score: 78,
-    },
-  ];
-};
-
-/**
- * Placeholder for fetching from Exploding Topics API.
- * Replace with your actual Exploding Topics API integration.
- * Expected data format from Exploding Topics API (example):
- * [{
- *   name: string,
- *   category: string,
- *   summary: string,
- *   url: string,
- *   score: number // Add a score for sorting/ranking
- * }]
- */
-const fetchFromExplodingTopics = async () => {
-  console.log("Simulating fetch from Exploding Topics API...");
-  // IMPORTANT: Replace this mock data with actual API calls to Exploding Topics.
-  return [
-    {
-      id: generateUniqueId(),
-      name: "AI in Drug Discovery",
-      category: "Healthcare AI",
-      summary: "Accelerating pharmaceutical development with AI algorithms.",
-      url: "https://example.com/ai-drug-discovery",
-      score: 92,
-    },
-    {
-      id: generateUniqueId(),
-      name: "Sustainable Tech Solutions",
-      category: "Environment",
-      summary:
-        "Innovations focusing on eco-friendly technology and circular economy.",
-      url: "https://example.com/sustainable-tech",
-      score: 88,
-    },
-  ];
-};
-
 // Function to fetch, parse, deduplicate, and store trends
 const fetchAndStoreTrendingTopics = async () => {
   console.log("Fetching and storing daily trends...");
-  let fetchedTopics = [];
-
   try {
-    const glimpseData = await fetchFromGlimpse();
-    fetchedTopics = fetchedTopics.concat(glimpseData);
+    await updateDailyTrends();
+    dailyTrends = getDailyTrendsWithLessons();
+    console.log(`Fetched and stored ${dailyTrends.length} trending topics.`);
   } catch (error) {
-    console.error("Error fetching from Glimpse API:", error);
+    console.error("Error in fetchAndStoreTrendingTopics:", error);
+    dailyTrends = [];
   }
-
-  try {
-    const explodingTopicsData = await fetchFromExplodingTopics();
-    fetchedTopics = fetchedTopics.concat(explodingTopicsData);
-  } catch (error) {
-    console.error("Error fetching from Exploding Topics API:", error);
-  }
-
-  // Transform to desired output format { topic, source, score }
-  const transformedTopics = fetchedTopics.map((t) => ({
-    topic: t.name, // Using 'name' as 'topic'
-    source: t.source || "Unknown",
-    score: t.score || 0,
-  }));
-
-  // Deduplicate topics by name (which is now 'topic') and keep only top 10-20, sorted by score
-  const uniqueAndSortedTopics = Array.from(
-    new Map(transformedTopics.map((topic) => [topic.topic, topic])).values()
-  ).sort((a, b) => b.score - a.score); // Sort by score descending
-
-  // Limit to top 20 (or fewer if less available)
-  dailyTrends = uniqueAndSortedTopics.slice(0, 20);
-  console.log(`Fetched and stored ${dailyTrends.length} trending topics.`);
-  // console.log("Current dailyTrends:", dailyTrends); // For debugging
 };
 
 // Schedule the function to run daily at 2 AM New York time
-// This effectively acts as a 24-hour cache.
 cron.schedule(
   "0 2 * * *",
   () => {
@@ -151,6 +56,10 @@ app.use(
 app.use(express.json());
 
 const UNSPLASH_ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY;
+
+app.get("/api/trends", (req, res) => {
+  res.json(dailyTrends);
+});
 
 app.post("/api/deepseek/lessons", async (req, res) => {
   const { topicSlug } = req.body;
@@ -198,29 +107,38 @@ app.post("/api/deepseek/lessons", async (req, res) => {
       ],
       response_format: { type: "json_object" },
     });
-
-    const content = response.choices[0].message.content;
-    if (!content) {
-      throw new Error("No content received from Deepseek API.");
-    }
-
-    const parsedContent = JSON.parse(content);
-    if (!parsedContent.lessons || !Array.isArray(parsedContent.lessons)) {
-      throw new Error(
-        "Invalid JSON structure received from Deepseek API. Expected an object with a 'lessons' array."
-      );
-    }
-
-    res.json({ lessons: parsedContent.lessons });
+    const lessonData = JSON.parse(response.choices[0].message.content);
+    res.json(lessonData);
   } catch (error) {
-    console.error(
-      "Error fetching dynamic lessons from Deepseek backend:",
-      error
-    );
-    res
-      .status(500)
-      .json({ error: "Failed to generate lessons from Deepseek." });
+    console.error("Error generating lesson content:", error);
+    res.status(500).json({ error: "Failed to generate lesson content" });
   }
+});
+
+app.get("/api/lesson/:topicSlug/:lessonId", async (req, res) => {
+  const { topicSlug, lessonId } = req.params;
+  // In a real application, you would fetch this from a database.
+  // For this example, we'll try to find it in the in-memory dailyTrends.
+
+  const trend = dailyTrends.find(
+    (t) => t.topic.toLowerCase().replace(/ /g, "-") === topicSlug
+  );
+
+  if (trend && trend.lessonContent) {
+    // Assuming lessonContent can be broken down into sub-lessons, or just return the whole thing
+    // For now, returning the whole lessonContent as a single lesson for the topic.
+    // A more complex implementation would involve generating multiple lessonIds within one topic.
+    if (lessonId === "overview") {
+      // A simple way to access the main lesson content
+      return res.json({
+        id: lessonId,
+        title: trend.lessonContent.title,
+        summary: trend.lessonContent.introduction,
+        content: trend.lessonContent, // Send the full content
+      });
+    }
+  }
+  res.status(404).json({ error: "Lesson not found" });
 });
 
 app.get("/api/images/search", async (req, res) => {
@@ -274,11 +192,6 @@ app.get("/api/images/search", async (req, res) => {
   }
 });
 
-// New API endpoint to serve daily trends in the requested format
-app.get("/api/daily-trends", (req, res) => {
-  res.json(dailyTrends);
-});
-
 app.listen(PORT, () => {
-  console.log(`Proxy server listening on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });

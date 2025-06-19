@@ -5,16 +5,17 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
+import { generateTrendingTopics } from "@/lib/trendGenerator";
 
 interface TrendTopic {
   id: string;
-  name: string;
+  topic: string;
   title: string;
-  category: string;
   summary: string;
+  image: string;
+  category: string;
   url: string;
   source: string;
-  image_url: string;
 }
 
 interface TrendContextType {
@@ -35,15 +36,11 @@ export const TrendProvider = ({ children }: { children: ReactNode }) => {
       try {
         setLoadingTrends(true);
         setErrorTrends(null);
-        const response = await fetch("http://localhost:5000/api/daily-trends"); // Assuming your backend is on port 5000
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data: TrendTopic[] = await response.json();
-        setDailyTrends(data);
-      } catch (error) {
+        const mockData = generateTrendingTopics();
+        setDailyTrends(mockData);
+      } catch (error: any) {
         console.error("Failed to fetch daily trends:", error);
-        setErrorTrends("Failed to load trending topics.");
+        setErrorTrends(error.message || "Failed to load trending topics.");
       } finally {
         setLoadingTrends(false);
       }
