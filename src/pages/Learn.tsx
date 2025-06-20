@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -38,7 +38,7 @@ import {
   Lightbulb,
   GraduationCap,
 } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -58,7 +58,6 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@supabase/auth-helpers-react";
-import { Link } from "react-router-dom";
 import { useTrends } from "@/contexts/TrendContext";
 import Toolkits from "@/pages/Toolkits";
 
@@ -238,22 +237,27 @@ const Learn = () => {
   const [trends, setTrends] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const hasFetched = useRef(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
     async function fetchTrends() {
       setLoading(true);
       setError("");
       try {
-        console.log("Fetching trends for Learn page...");
         const res = await fetch(
           "http://localhost:4000/api/trends?source=learn"
         );
         if (!res.ok) throw new Error("Failed to fetch trending topics");
         const data = await res.json();
-        console.log("Received trends data:", data);
-        setTrends(data);
+        if (!Array.isArray(data)) {
+          setTrends([]);
+        } else {
+          setTrends(data);
+        }
       } catch (err) {
-        console.error("Error fetching trends:", err);
         setError("Failed to load trending topics.");
         setTrends([]);
       } finally {
@@ -314,44 +318,54 @@ const Learn = () => {
           </div>
         ) : trends && trends.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {trends.map((trend, idx) => (
-              <div
-                key={trend.id || trend.title + idx}
-                className="bg-white dark:bg-muted rounded-xl shadow overflow-hidden border border-border flex flex-col justify-between h-64 hover:shadow-lg transition-shadow"
-              >
-                <img
-                  src={
-                    trend.image ||
-                    "https://via.placeholder.com/400x200?text=No+Image"
-                  }
-                  alt={trend.title}
-                  className="w-full h-40 object-cover rounded-t-md"
-                  onError={(e) => {
-                    e.currentTarget.src =
-                      "https://via.placeholder.com/400x200?text=Image+Not+Available";
-                  }}
-                />
-                <div className="p-4 flex-1 flex flex-col justify-between">
-                  <h4 className="text-xl font-bold mb-2">{trend.title}</h4>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {trend.summary || "No summary available."}
-                  </p>
-                  <div className="flex gap-2 mt-auto">
-                    <a
-                      href={trend.url || "#"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bg-primary text-white px-3 py-1 rounded hover:bg-primary/90"
-                    >
-                      Read More
-                    </a>
-                    <button className="bg-muted px-3 py-1 rounded hover:bg-muted/80">
-                      Discuss
-                    </button>
+            {trends.map((trend, idx) => {
+              // Defensive: skip if missing required fields
+              if (!trend.title || !trend.summary) return null;
+              // Generate slug from title or use provided slug
+              const slug =
+                trend.slug ||
+                trend.title
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]+/g, "-")
+                  .replace(/(^-|-$)/g, "");
+              return (
+                <div
+                  key={trend.id || slug || trend.title + idx}
+                  className="bg-white dark:bg-muted rounded-xl shadow overflow-hidden border border-border flex flex-col justify-between h-64 hover:shadow-lg transition-shadow"
+                >
+                  <img
+                    src={
+                      trend.image ||
+                      "https://via.placeholder.com/400x200?text=No+Image"
+                    }
+                    alt={trend.title}
+                    className="w-full h-40 object-cover rounded-t-md"
+                    onError={(e) => {
+                      e.currentTarget.src =
+                        "https://via.placeholder.com/400x200?text=Image+Not+Available";
+                    }}
+                  />
+                  <div className="p-4 flex-1 flex flex-col justify-between">
+                    <h4 className="text-xl font-bold mb-2">{trend.title}</h4>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {trend.summary || "No summary available."}
+                    </p>
+                    <div className="flex gap-2 mt-auto">
+                      {/* Only internal navigation for Learn More */}
+                      <Link
+                        to={`/quest/${slug}`}
+                        className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                      >
+                        Learn More
+                      </Link>
+                      <button className="bg-muted px-3 py-1 rounded hover:bg-muted/80">
+                        Discuss
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="text-center text-muted-foreground">

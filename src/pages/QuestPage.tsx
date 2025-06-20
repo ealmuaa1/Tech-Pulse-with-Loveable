@@ -1,7 +1,16 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, BookOpen, Brain, Trophy, Gamepad2 } from "lucide-react";
+import {
+  ArrowLeft,
+  BookOpen,
+  Brain,
+  Trophy,
+  Gamepad2,
+  Sparkles,
+  ListTodo,
+  Puzzle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
@@ -15,14 +24,25 @@ import { learningQuests } from "@/data/quests";
 import { questIcons } from "@/lib/questIcons";
 import type { FlashcardType, LearningProgress } from "@/types";
 import React from "react";
+import { supabase } from "@/lib/supabase";
+
+const SUMMARY_OUTLINE = [
+  "Teach them to master GPT, Claude, Gemini, etc.",
+  "Prompt training (choose best prompt, fix weak prompt, etc.)",
+  "Real-world challenge (write a marketing plan, debug this code, etc.)",
+  "Earn badges (Prompt Engineering, Image Gen, etc.)",
+  "So What? Career boosts + income gain",
+];
 
 const QuestPage = () => {
-  const { questId } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
+  const [topic, setTopic] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("flashcards");
   const [currentFlashcardIndex, setCurrentFlashcardIndex] = useState(0);
   const [selectedQuiz, setSelectedQuiz] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [progress, setProgress] = useState<LearningProgress>({
     userId: "user123",
     totalXp: 0,
@@ -34,15 +54,51 @@ const QuestPage = () => {
     lastActive: new Date(),
   });
 
-  const quest = learningQuests.find((q) => q.id === Number(questId));
+  useEffect(() => {
+    async function fetchTopic() {
+      setLoading(true);
+      setError("");
+      try {
+        // Fetch topic by slug from Supabase
+        const { data, error } = await supabase
+          .from("learn_topics")
+          .select("*")
+          .eq("slug", slug)
+          .single();
+        if (error || !data) {
+          setError("Topic not found. Please try another quest.");
+          setTopic(null);
+        } else {
+          setTopic(data);
+        }
+      } catch (err) {
+        setError("Failed to load topic.");
+        setTopic(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchTopic();
+  }, [slug]);
+
+  // Parse summary into sections (for demo, just split by newlines or outline)
+  const summarySections = topic?.summary
+    ? topic.summary.split(/\n|\r|\u2022|\*/).filter(Boolean)
+    : [];
+
+  const quest = learningQuests.find((q) => q.id === Number(slug));
 
   useEffect(() => {
     if (!quest) {
       navigate("/learn");
       return;
     }
-    setIsLoading(false);
-  }, [quest, navigate]);
+    setProgress((prev) => ({
+      ...prev,
+      totalXp: prev.totalXp + (prev.level - 1) * 100,
+      level: prev.level,
+    }));
+  }, [quest, navigate, progress.level]);
 
   const handleFlashcardComplete = (correct: boolean) => {
     const currentFlashcard = questFlashcards[currentFlashcardIndex];
@@ -98,16 +154,13 @@ const QuestPage = () => {
             </Button>
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-primary/10 rounded-lg">
-                {React.createElement(
-                  questIcons[quest.category] || questIcons.default,
-                  {
-                    className: "w-6 h-6 text-primary",
-                  }
-                )}
+                <Sparkles className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold">{quest.title}</h1>
-                <p className="text-muted-foreground">{quest.description}</p>
+                <h1 className="text-3xl font-bold">{topic?.title || slug}</h1>
+                <p className="text-muted-foreground">
+                  {topic?.subtitle || "AI Quest"}
+                </p>
               </div>
             </div>
           </div>
@@ -117,99 +170,92 @@ const QuestPage = () => {
           </div>
         </motion.div>
 
+        {/* Game Buttons */}
+        <div className="flex flex-wrap gap-4 mb-8">
+          <Button variant="outline" onClick={() => setActiveTab("flashcards")}>
+            {" "}
+            <BookOpen className="w-4 h-4 mr-2" /> Flashcards{" "}
+          </Button>
+          <Button variant="outline" onClick={() => setActiveTab("quiz")}>
+            {" "}
+            <Brain className="w-4 h-4 mr-2" /> Quiz{" "}
+          </Button>
+          <Button variant="outline" onClick={() => setActiveTab("memory")}>
+            {" "}
+            <Puzzle className="w-4 h-4 mr-2" /> Memory Game{" "}
+          </Button>
+          <Button variant="outline" onClick={() => setActiveTab("fill")}>
+            {" "}
+            <ListTodo className="w-4 h-4 mr-2" /> Fill-in-the-Blank{" "}
+          </Button>
+        </div>
+
+        {/* Summary Breakdown */}
+        <div className="bg-card p-6 rounded-xl shadow space-y-4">
+          <h2 className="text-xl font-semibold mb-2">GPT Summary Breakdown</h2>
+          {loading ? (
+            <div className="animate-pulse h-6 w-1/2 bg-muted rounded" />
+          ) : error ? (
+            <div className="text-red-500">{error}</div>
+          ) : summarySections.length > 0 ? (
+            <ul className="list-disc pl-6 space-y-2">
+              {SUMMARY_OUTLINE.map((outline, idx) => (
+                <li key={idx} className="flex items-center gap-2">
+                  <span role="img" aria-label="bullet">
+                    🔥
+                  </span>
+                  <span>{summarySections[idx] || outline}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="text-muted-foreground">
+              No summary available for this quest.
+            </div>
+          )}
+        </div>
+
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
-          className="space-y-6"
+          className="space-y-6 mt-8"
         >
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="flashcards">
-              <BookOpen className="w-4 h-4 mr-2" />
-              Flashcards
+              {" "}
+              <BookOpen className="w-4 h-4 mr-2" /> Flashcards{" "}
             </TabsTrigger>
-            <TabsTrigger value="quizzes">
-              <Brain className="w-4 h-4 mr-2" />
-              Quizzes
+            <TabsTrigger value="quiz">
+              {" "}
+              <Brain className="w-4 h-4 mr-2" /> Quiz{" "}
             </TabsTrigger>
-            <TabsTrigger value="game">
-              <Gamepad2 className="w-4 h-4 mr-2" />
-              Learning Game
+            <TabsTrigger value="memory">
+              {" "}
+              <Puzzle className="w-4 h-4 mr-2" /> Memory Game{" "}
+            </TabsTrigger>
+            <TabsTrigger value="fill">
+              {" "}
+              <ListTodo className="w-4 h-4 mr-2" /> Fill-in-the-Blank{" "}
             </TabsTrigger>
           </TabsList>
-
           <TabsContent value="flashcards" className="mt-6">
-            {isLoading ? (
-              <div className="flex justify-center items-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-              </div>
-            ) : questFlashcards.length > 0 ? (
-              <div className="max-w-2xl mx-auto">
-                <Flashcard
-                  flashcard={questFlashcards[currentFlashcardIndex]}
-                  onComplete={handleFlashcardComplete}
-                  onNext={() =>
-                    setCurrentFlashcardIndex(
-                      (prev) => (prev + 1) % questFlashcards.length
-                    )
-                  }
-                />
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">
-                  No flashcards available for this quest.
-                </p>
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="quizzes" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {questQuizzes.map((quiz) => (
-                <Card
-                  key={quiz.id}
-                  className={`p-6 cursor-pointer transition-all hover:shadow-lg ${
-                    selectedQuiz === quiz.id ? "ring-2 ring-primary" : ""
-                  }`}
-                  onClick={() => setSelectedQuiz(quiz.id)}
-                >
-                  <h3 className="text-xl font-semibold mb-2">{quiz.title}</h3>
-                  <p className="text-muted-foreground mb-4">
-                    {quiz.description}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
-                      {quiz.questions.length} questions
-                    </span>
-                    <span className="text-sm font-medium">
-                      {progress.completedQuizzes.includes(quiz.id)
-                        ? "Completed"
-                        : "Not Started"}
-                    </span>
-                  </div>
-                </Card>
-              ))}
+            <div className="text-center text-muted-foreground">
+              Flashcards game coming soon.
             </div>
-
-            {selectedQuiz !== null && (
-              <div className="mt-8 max-w-2xl mx-auto">
-                <Quiz
-                  quiz={quizzes.find((q) => q.id === selectedQuiz)!}
-                  onComplete={handleQuizComplete}
-                />
-              </div>
-            )}
           </TabsContent>
-
-          <TabsContent value="game" className="mt-6">
-            <div className="text-center py-12">
-              <h3 className="text-xl font-semibold mb-4">
-                Learning Game Coming Soon!
-              </h3>
-              <p className="text-muted-foreground">
-                We're working on an interactive learning game to make your
-                learning experience even more engaging.
-              </p>
+          <TabsContent value="quiz" className="mt-6">
+            <div className="text-center text-muted-foreground">
+              Quiz game coming soon.
+            </div>
+          </TabsContent>
+          <TabsContent value="memory" className="mt-6">
+            <div className="text-center text-muted-foreground">
+              Memory game coming soon.
+            </div>
+          </TabsContent>
+          <TabsContent value="fill" className="mt-6">
+            <div className="text-center text-muted-foreground">
+              Fill-in-the-Blank game coming soon.
             </div>
           </TabsContent>
         </Tabs>
