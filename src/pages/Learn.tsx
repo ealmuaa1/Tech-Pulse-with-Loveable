@@ -208,6 +208,16 @@ const normalizeTopic = (topic: string): string => {
 };
 
 /**
+ * Generate URL-safe slug from title
+ */
+const generateSlug = (title: string): string => {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+};
+
+/**
  * Shuffle array function
  */
 function shuffle(array) {
@@ -322,12 +332,7 @@ const Learn = () => {
               // Defensive: skip if missing required fields
               if (!trend.title || !trend.summary) return null;
               // Generate slug from title or use provided slug
-              const slug =
-                trend.slug ||
-                trend.title
-                  .toLowerCase()
-                  .replace(/[^a-z0-9]+/g, "-")
-                  .replace(/(^-|-$)/g, "");
+              const slug = trend.slug || generateSlug(trend.title);
               return (
                 <div
                   key={trend.id || slug || trend.title + idx}
@@ -351,14 +356,14 @@ const Learn = () => {
                       {trend.summary || "No summary available."}
                     </p>
                     <div className="flex gap-2 mt-auto">
-                      {/* Only internal navigation for Learn More */}
+                      {/* Learn More button routes to quest page */}
                       <Link
                         to={`/quest/${slug}`}
-                        className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                        className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition-colors flex-1 text-center"
                       >
                         Learn More
                       </Link>
-                      <button className="bg-muted px-3 py-1 rounded hover:bg-muted/80">
+                      <button className="bg-muted px-3 py-1 rounded hover:bg-muted/80 transition-colors">
                         Discuss
                       </button>
                     </div>
