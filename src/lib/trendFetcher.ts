@@ -3,7 +3,16 @@ import fetch from "node-fetch";
 import * as xml2js from "xml2js";
 import * as dotenv from "dotenv";
 
-dotenv.config();
+// Removed dotenv.config() as it is handled globally
+
+// Check for DeepSeek API Key
+if (!process.env.DEEPSEEK_API_KEY) {
+  console.error(
+    "DEEPSEEK_API_KEY not found. Please add it to your .env file to use the trend fetching feature."
+  );
+}
+
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 
 interface Flashcard {
   term: string;
@@ -412,6 +421,149 @@ async function fetchTrendsFromHackerNews(): Promise<DailyTrend[]> {
     console.error("Error fetching Hacker News trends:", error);
     return [];
   }
+}
+
+export async function fetchTrendsFromAPI(query: string) {
+  if (!DEEPSEEK_API_KEY) {
+    console.error("Cannot fetch trends: DEEPSEEK_API_KEY is not configured.");
+    return {
+      related_topics: [],
+      trending_searches: [],
+    };
+  }
+  const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: "deepseek-chat",
+      messages: [
+        {
+          role: "user",
+          content: query,
+        },
+      ],
+      max_tokens: 500,
+      temperature: 0.7,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    console.error(
+      `DeepSeek API HTTP error! status: ${response.status}, body: ${errorBody}`
+    );
+    return {
+      related_topics: [],
+      trending_searches: [],
+    };
+  }
+
+  const data = (await response.json()) as GPTResponse;
+  const gptContent = data.choices[0]?.message?.content;
+
+  if (!gptContent) {
+    console.error("No content received from DeepSeek API.");
+    return {
+      related_topics: [],
+      trending_searches: [],
+    };
+  }
+
+  // Simple parsing logic - this will need to be robustified
+  const parseSection = (key: string) => {
+    const match = gptContent.match(
+      new RegExp(`${key}:\s*(.*?)(?=\d+\. |Flashcards:|Quiz Questions:|$)`, "s")
+    );
+    return match ? match[1].trim() : `No ${key} available.`;
+  };
+
+  const parseFlashcards = () => {
+    const flashcardMatch = gptContent.match(/Flashcards:\s*\((.*?)\)/s);
+    if (flashcardMatch && flashcardMatch[1]) {
+      return flashcardMatch[1]
+        .split("), ")
+        .map((card: string) => {
+          const [term, definition] = card
+            .split("s*+s*")
+            .map((s) => s.trim().replace(/^\(|\)$/g, ""));
+          return { term: term || "", definition: definition || "" };
+        })
+        .filter(
+          (card: { term: string; definition: string }) =>
+            card.term && card.definition
+        );
+    }
+    return [];
+  };
+
+  const parseQuizQuestions = () => {
+    const quizMatch = gptContent.match(/Quiz Questions:\s*((?:.|\n)*)/s);
+    if (quizMatch && quizMatch[1]) {
+      const questions: QuizQuestion[] = [];
+      const lines = quizMatch[1]
+        .split("\n")
+        .filter((line) => line.trim() !== "");
+
+      let currentQuestion: Partial<QuizQuestion> = {};
+      for (const line of lines) {
+        if (line.match(/^a\.\s*(.*)/)) {
+          // Multiple choice
+          if (currentQuestion.question)
+            questions.push(currentQuestion as QuizQuestion);
+          currentQuestion = {
+            question: line.substring(3).trim(),
+            type: "multiple-choice",
+            options: [],
+            answer: "",
+          };
+        } else if (line.match(/^b\.\s*(True\/False:)?\s*(.*)/)) {
+          // True/False
+          if (currentQuestion.question)
+            questions.push(currentQuestion as QuizQuestion);
+          currentQuestion = {
+            question: line.replace(/^b\.\s*(True\/False:)?\s*/, "").trim(),
+            type: "true-false",
+            answer: "",
+          };
+        } else if (
+          currentQuestion.type === "multiple-choice" &&
+          line.match(/^\s*[A-D]\.\s*(.*)/)
+        ) {
+          currentQuestion.options?.push(line.trim());
+          if (line.includes("(Correct)")) {
+            currentQuestion.answer = line
+              .replace("(Correct)", "")
+              .trim()
+              .substring(3);
+          }
+        } else if (
+          currentQuestion.type === "true-false" &&
+          line.match(/^\s*Answer:\s*(True|False)/)
+        ) {
+          currentQuestion.answer = line.replace("Answer:", "").trim();
+        }
+      }
+      if (currentQuestion.question)
+        questions.push(currentQuestion as QuizQuestion);
+      return questions.filter((q) => q.question && q.answer);
+    }
+    return [];
+  };
+
+  const lesson: LessonContent = {
+    title: parseSection("Title"),
+    introduction: parseSection("Quick Introduction"),
+    importance: parseSection("Why it's important"),
+    howItWorks: parseSection("How it works"),
+    practicalUse: parseSection("Practical Use Case"),
+    flashcards: parseFlashcards(),
+    quizQuestions: parseQuizQuestions(),
+  };
+
+  return lesson;
 }
 
 export async function updateDailyTrends(): Promise<void> {

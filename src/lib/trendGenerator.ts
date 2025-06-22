@@ -10,11 +10,14 @@ interface ImportMeta {
 }
 
 export interface TrendingTopic {
-  title: string;
+  id: string;
   topic: string;
-  source: "Reddit" | "Hacker News";
-  image: string;
+  title: string;
   summary: string;
+  image: string;
+  category: string;
+  url: string;
+  source: string;
 }
 
 // Fetch trending topics from the server-side API route

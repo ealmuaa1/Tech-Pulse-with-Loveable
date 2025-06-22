@@ -28,7 +28,7 @@ import { TrendProvider } from "@/contexts/TrendContext";
  * - /learn/:slug: Topic page
  * - /learn/:slug/flashcards: Flashcard page
  * - /learn/:slug/quiz: Quiz page
- * - /quest/:questId: Quest page
+ * - /quest/:slug: Quest page
  * - /dashboard: Dashboard page
  * - /ideas: Ideas page
  * - *: 404 Not Found page
@@ -48,7 +48,7 @@ function App() {
             <Route path="/learn/:slug" element={<TopicPage />} />
             <Route path="/learn/:slug/flashcards" element={<FlashcardPage />} />
             <Route path="/learn/:slug/quiz" element={<QuizPage />} />
-            <Route path="/quest/:questId" element={<QuestPage />} />
+            <Route path="/quest/:slug" element={<QuestPage />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/ideas" element={<Ideas />} />
             <Route path="*" element={<NotFound />} />

@@ -1,238 +1,12 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from "react";
 import BottomNavigation from "@/components/BottomNavigation";
-import {
-  Play,
-  Clock,
-  Trophy,
-  Star,
-  BookOpen,
-  Target,
-  Zap,
-  Brain,
-  ArrowLeft,
-  Lock,
-  CheckCircle2,
-  Sparkles,
-  Rocket,
-  Code2,
-  Cpu,
-  Database,
-  Globe,
-  Shield,
-  Smartphone,
-  Network,
-  Wallet,
-  Gauge,
-  Medal,
-  Crown,
-  Flame,
-  Timer,
-  Bookmark,
-  ChevronRight,
-  X,
-  Cloud,
-  Lightbulb,
-  GraduationCap,
-} from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Flashcard } from "@/components/Flashcard";
-import { Quiz } from "@/components/Quiz";
-import { ProgressTracker } from "@/components/ProgressTracker";
-import { flashcards as defaultFlashcards } from "@/data/flashcards";
-import { quizzes } from "@/data/quizzes";
-import { LearningProgress, achievements } from "@/data/progress";
-import { Flashcard as FlashcardType } from "@/data/flashcards";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { supabase } from "@/lib/supabase";
-import { useUser } from "@supabase/auth-helpers-react";
-import { useTrends } from "@/contexts/TrendContext";
-import Toolkits from "@/pages/Toolkits";
+import TopicCard from "@/components/TopicCard";
+import { useProductHuntTools } from "@/hooks/useProductHuntTools";
+import type { ProductHuntTool } from "@/lib/productHunt";
+import { getAllTopics, Topic } from "@/lib/topicService";
 
-/**
- * Learning quests data
- * Each quest represents a learning path with progress tracking
- */
-const learningQuests = [
-  {
-    id: 1,
-    title: "AI Fundamentals",
-    description:
-      "Master the basics of artificial intelligence and machine learning",
-    image:
-      "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&h=300&fit=crop",
-    progress: 75,
-    duration: "45 min",
-    lessons: 8,
-    difficulty: "Beginner",
-    xp: 150,
-    completed: false,
-    locked: false,
-    category: "AI",
-  },
-  {
-    id: 2,
-    title: "Blockchain Basics",
-    description:
-      "Understand blockchain technology and its applications beyond cryptocurrency",
-    image:
-      "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=600&h=300&fit=crop",
-    progress: 30,
-    duration: "60 min",
-    lessons: 10,
-    difficulty: "Beginner",
-    xp: 200,
-    completed: false,
-    locked: false,
-    category: "Blockchain",
-  },
-  {
-    id: 3,
-    title: "Quantum Computing Intro",
-    description:
-      "Explore the fascinating world of quantum computing and its potential",
-    image:
-      "https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&h=300&fit=crop",
-    progress: 0,
-    duration: "90 min",
-    lessons: 12,
-    difficulty: "Intermediate",
-    xp: 300,
-    completed: false,
-    locked: false,
-    category: "Quantum",
-  },
-  {
-    id: 4,
-    title: "Cybersecurity Essentials",
-    description: "Learn essential cybersecurity concepts and best practices",
-    image:
-      "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=600&h=300&fit=crop",
-    progress: 100,
-    duration: "75 min",
-    lessons: 9,
-    difficulty: "Beginner",
-    xp: 250,
-    completed: true,
-    locked: false,
-    category: "Security",
-  },
-  {
-    id: 5,
-    title: "IoT Revolution",
-    description: "Discover how Internet of Things is transforming our world",
-    image:
-      "https://images.unsplash.com/photo-1500673922987-e212871fec22?w=600&h=300&fit=crop",
-    progress: 0,
-    duration: "50 min",
-    lessons: 7,
-    difficulty: "Beginner",
-    xp: 180,
-    completed: false,
-    locked: true,
-    category: "IoT",
-  },
-  {
-    id: 6,
-    title: "Advanced AI Ethics",
-    description: "Navigate the ethical implications of artificial intelligence",
-    image:
-      "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=600&h=300&fit=crop",
-    progress: 0,
-    duration: "120 min",
-    lessons: 15,
-    difficulty: "Advanced",
-    xp: 400,
-    completed: false,
-    locked: true,
-    category: "AI",
-  },
-];
-
-// Map quest categories to icons
-const questIcons: Record<string, any> = {
-  AI: Brain,
-  Web: Globe,
-  Mobile: Smartphone,
-  Cloud: Cloud,
-  Security: Shield,
-  Data: Database,
-  Blockchain: Wallet,
-  IoT: Network,
-  Quantum: Cpu,
-  default: Rocket,
-};
-
-// Map achievement types to icons
-const achievementIcons: Record<string, any> = {
-  first_quest: Star,
-  streak_3: Flame,
-  streak_7: Crown,
-  perfect_quiz: Target,
-  flashcard_master: Bookmark,
-  quick_learner: Timer,
-  default: Medal,
-};
-
-// Topic normalization mapping
-const topicAliases: Record<string, string> = {
-  AI: "Artificial Intelligence",
-  "Artificial Intelligence": "Artificial Intelligence",
-  "Machine Learning": "Machine Learning",
-  ML: "Machine Learning",
-  "Cyber Security": "Cybersecurity",
-  Cyber: "Cybersecurity",
-  ARVR: "AR/VR",
-  "Augmented Reality": "AR/VR",
-  "Virtual Reality": "AR/VR",
-};
-
-/**
- * Normalize topic names for consistent matching
- */
-const normalizeTopic = (topic: string): string => {
-  const normalized = topicAliases[topic] || topic;
-  return normalized.toLowerCase().trim();
-};
-
-/**
- * Generate URL-safe slug from title
- */
-const generateSlug = (title: string): string => {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-};
-
-/**
- * Shuffle array function
- */
-function shuffle(array) {
-  let currentIndex = array.length,
-    randomIndex;
-  while (currentIndex !== 0) {
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex--;
-    [array[currentIndex], array[randomIndex]] = [
-      array[randomIndex],
-      array[currentIndex],
-    ];
-  }
-  return array;
-}
+const TOPICS_PER_PAGE = 3;
+const TOOLS_PER_PAGE = 6;
 
 /**
  * Learn page component
@@ -244,148 +18,213 @@ function shuffle(array) {
  * - Difficulty indicators
  */
 const Learn = () => {
-  const [trends, setTrends] = useState([]);
+  // Trending Topics
+  const [topics, setTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const hasFetched = useRef(false);
-  const navigate = useNavigate();
+  const [error, setError] = useState<string | null>(null);
+  const [topicPage, setTopicPage] = useState(1);
+
+  // AI Toolkits
+  const {
+    tools,
+    isLoading: isLoadingTools,
+    error: toolError,
+  } = useProductHuntTools();
+  const [toolPage, setToolPage] = useState(1);
 
   useEffect(() => {
-    if (hasFetched.current) return;
-    hasFetched.current = true;
-    async function fetchTrends() {
+    const fetchTopics = async () => {
       setLoading(true);
-      setError("");
       try {
-        const res = await fetch(
-          "http://localhost:4000/api/trends?source=learn"
-        );
-        if (!res.ok) throw new Error("Failed to fetch trending topics");
-        const data = await res.json();
-        if (!Array.isArray(data)) {
-          setTrends([]);
-        } else {
-          setTrends(data);
-        }
+        const fetched = await getAllTopics();
+        setTopics(fetched);
+        setError(null);
       } catch (err) {
-        setError("Failed to load trending topics.");
-        setTrends([]);
+        setError("Failed to fetch topics.");
       } finally {
         setLoading(false);
       }
-    }
-    fetchTrends();
+    };
+    fetchTopics();
   }, []);
 
+  // Pagination logic
+  const paginatedTopics = topics.slice(
+    (topicPage - 1) * TOPICS_PER_PAGE,
+    topicPage * TOPICS_PER_PAGE
+  );
+  const totalTopicPages = Math.ceil(topics.length / TOPICS_PER_PAGE) || 1;
+
+  const paginatedTools = tools.slice(
+    (toolPage - 1) * TOOLS_PER_PAGE,
+    toolPage * TOOLS_PER_PAGE
+  );
+  const totalToolPages = Math.ceil(tools.length / TOOLS_PER_PAGE) || 1;
+
   return (
-    <div className="min-h-screen bg-background text-foreground pb-20">
-      <div className="container space-y-6 p-6 mx-auto">
-        {/* Learning Progress Section */}
-        <div className="bg-card p-6 rounded-2xl shadow-md mb-6">
-          <h2 className="text-lg font-semibold mb-2">Learning Progress</h2>
-          <p className="text-muted-foreground mb-1 text-sm">
-            3 more digests to complete your weekly goal! 🚀
-          </p>
-          <div className="w-full h-4 bg-muted rounded-full overflow-hidden">
-            <div
-              className="h-4 bg-primary rounded-full"
-              style={{ width: "67%" }}
-            />
-          </div>
-          <p className="text-right mt-1 text-sm text-primary font-medium">
-            67%
-          </p>
-        </div>
-
-        {/* Today's Idea Spark Card */}
-        <div className="bg-green-100 p-4 rounded-2xl mb-6">
-          <h3 className="text-md font-semibold text-green-800">
-            Today's Idea Spark
-          </h3>
-          <p className="text-sm text-green-900">
-            Smart City Infrastructure: What if streetlights adjusted traffic by
-            air quality?
-          </p>
-          <button className="mt-2 bg-green-700 text-white px-4 py-1 rounded-md hover:bg-green-800">
-            Explore More
-          </button>
-        </div>
-
-        {/* Today's Top Digests */}
-        <h2 className="text-lg font-semibold mb-4">Today's Top Digests</h2>
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[...Array(4)].map((_, idx) => (
-              <div
-                key={idx}
-                className="animate-pulse bg-muted rounded-xl h-64"
-              />
-            ))}
-          </div>
-        ) : error ? (
-          <div className="text-center text-red-500 font-semibold mb-4">
-            {error}
-          </div>
-        ) : trends && trends.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {trends.map((trend, idx) => {
-              // Defensive: skip if missing required fields
-              if (!trend.title || !trend.summary) return null;
-              // Generate slug from title or use provided slug
-              const slug = trend.slug || generateSlug(trend.title);
-              return (
+    <div className="bg-gray-50 min-h-screen pb-24">
+      <main className="max-w-6xl mx-auto p-4 space-y-16">
+        {/* Trending Tech Topics */}
+        <section>
+          <h2 className="text-2xl font-bold mb-6">Trending Tech Topics</h2>
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(TOPICS_PER_PAGE)].map((_, idx) => (
                 <div
-                  key={trend.id || slug || trend.title + idx}
-                  className="bg-white dark:bg-muted rounded-xl shadow overflow-hidden border border-border flex flex-col justify-between h-64 hover:shadow-lg transition-shadow"
+                  key={idx}
+                  className="h-64 bg-muted rounded-xl animate-pulse"
+                />
+              ))}
+            </div>
+          ) : error ? (
+            <div className="text-center text-red-500 font-semibold mb-4">
+              {error}
+            </div>
+          ) : topics.length === 0 ? (
+            <div className="text-center text-gray-500 mb-4">
+              <p className="mb-4">No topics found. This could be due to:</p>
+              <ul className="text-sm space-y-1 text-left max-w-md mx-auto">
+                <li>• Missing Supabase configuration</li>
+                <li>• No data in the learn_topics table</li>
+                <li>• Network connectivity issues</li>
+              </ul>
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  To fix this, ensure your .env file contains:
+                </p>
+                <pre className="text-xs mt-2 bg-blue-100 p-2 rounded">
+                  VITE_SUPABASE_URL=your_supabase_url
+                  <br />
+                  VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+                </pre>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {paginatedTopics.map((topic) => {
+                  return (
+                    <TopicCard
+                      key={topic.id}
+                      title={topic.title || "Untitled"}
+                      summary={topic.summary || "No summary available."}
+                      imageUrl={topic.image_url || ""}
+                      slug={topic.slug}
+                      source={topic.source || "Unknown"}
+                      fallbackImage={"/placeholder.svg"}
+                    />
+                  );
+                })}
+              </div>
+              <div className="flex justify-center gap-2 mt-4">
+                <button
+                  className="px-3 py-1 rounded bg-muted text-sm"
+                  disabled={topicPage === 1}
+                  onClick={() => setTopicPage(topicPage - 1)}
                 >
-                  <img
-                    src={
-                      trend.image ||
-                      "https://via.placeholder.com/400x200?text=No+Image"
-                    }
-                    alt={trend.title}
-                    className="w-full h-40 object-cover rounded-t-md"
-                    onError={(e) => {
-                      e.currentTarget.src =
-                        "https://via.placeholder.com/400x200?text=Image+Not+Available";
-                    }}
-                  />
-                  <div className="p-4 flex-1 flex flex-col justify-between">
-                    <h4 className="text-xl font-bold mb-2">{trend.title}</h4>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {trend.summary || "No summary available."}
-                    </p>
-                    <div className="flex gap-2 mt-auto">
-                      {/* Learn More button routes to quest page */}
-                      <Link
-                        to={`/quest/${slug}`}
-                        className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition-colors flex-1 text-center"
-                      >
-                        Learn More
-                      </Link>
-                      <button className="bg-muted px-3 py-1 rounded hover:bg-muted/80 transition-colors">
-                        Discuss
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="text-center text-muted-foreground">
-            No trending topics available at the moment.
-          </div>
-        )}
+                  Prev
+                </button>
+                <span className="text-sm">
+                  Page {topicPage} of {totalTopicPages}
+                </span>
+                <button
+                  className="px-3 py-1 rounded bg-muted text-sm"
+                  disabled={topicPage === totalTopicPages}
+                  onClick={() => setTopicPage(topicPage + 1)}
+                >
+                  Next
+                </button>
+              </div>
+            </>
+          )}
+        </section>
 
-        {/* Trending AI Toolkits Section */}
-        <div className="mt-12 border-t border-border pt-8">
-          <h2 className="text-2xl font-semibold mb-6">
-            🔥 Trending AI Toolkits
-          </h2>
-          <Toolkits />
-        </div>
-      </div>
+        {/* Trending AI Toolkits */}
+        <section>
+          <h2 className="text-2xl font-bold mb-6">🔥 Trending AI Toolkits</h2>
+          {/* Debug info for tools */}
+          <div className="text-xs text-gray-500 mb-2">
+            Tools: {tools.length} | Loading: {isLoadingTools ? "Yes" : "No"} |
+            Error: {toolError ? "Yes" : "No"}
+          </div>
+          {toolError ? (
+            <div className="text-red-500 p-4 bg-red-50 rounded-lg">
+              <p className="font-semibold">Error loading AI toolkits:</p>
+              <p className="text-sm">{toolError.message}</p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {(isLoadingTools
+                  ? Array.from({ length: TOOLS_PER_PAGE })
+                  : paginatedTools
+                ).map((tool, idx) =>
+                  isLoadingTools ? (
+                    <div
+                      key={idx}
+                      className="h-64 bg-muted rounded-xl animate-pulse"
+                    />
+                  ) : (
+                    <div
+                      key={(tool as ProductHuntTool).id}
+                      className="bg-card rounded-xl shadow-sm border border-border overflow-hidden flex flex-col justify-between items-center text-center p-6 w-full h-80"
+                    >
+                      <img
+                        src={
+                          (tool as ProductHuntTool).image ||
+                          "https://source.unsplash.com/featured/?startup,tech"
+                        }
+                        alt={(tool as ProductHuntTool).name}
+                        className="w-24 h-24 rounded-md object-cover mb-4"
+                      />
+                      <h3 className="text-xl font-semibold mb-2">
+                        {(tool as ProductHuntTool).name}
+                      </h3>
+                      <p className="text-muted-foreground text-sm line-clamp-2">
+                        {(tool as ProductHuntTool).tagline}
+                      </p>
+                      <div className="flex gap-3 mt-4 w-full">
+                        <button className="flex-1 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
+                          Learn More
+                        </button>
+                        <a
+                          href={(tool as ProductHuntTool).url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 bg-muted px-4 py-2 rounded-lg hover:bg-muted/80 transition-colors text-center"
+                        >
+                          Visit Site
+                        </a>
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+              {totalToolPages > 1 && (
+                <div className="flex justify-center gap-2 mt-4">
+                  <button
+                    className="px-3 py-1 rounded bg-muted text-sm"
+                    disabled={toolPage === 1}
+                    onClick={() => setToolPage(toolPage - 1)}
+                  >
+                    Prev
+                  </button>
+                  <span className="text-sm">
+                    Page {toolPage} of {totalToolPages}
+                  </span>
+                  <button
+                    className="px-3 py-1 rounded bg-muted text-sm"
+                    disabled={toolPage === totalToolPages}
+                    onClick={() => setToolPage(toolPage + 1)}
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </section>
+      </main>
       <BottomNavigation currentPage="learn" />
     </div>
   );

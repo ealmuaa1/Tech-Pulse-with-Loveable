@@ -36,7 +36,7 @@ export const TrendProvider = ({ children }: { children: ReactNode }) => {
       try {
         setLoadingTrends(true);
         setErrorTrends(null);
-        const mockData = generateTrendingTopics();
+        const mockData = await generateTrendingTopics();
         setDailyTrends(mockData);
       } catch (error: any) {
         console.error("Failed to fetch daily trends:", error);

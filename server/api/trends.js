@@ -3,10 +3,23 @@ import fetch from "node-fetch";
 import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
 import dotenv from "dotenv";
-
-dotenv.config();
+import xml2js from "xml2js";
 
 const router = express.Router();
+
+// Check for Product Hunt API Key
+if (!process.env.PH_API_KEY) {
+  console.error(
+    "PH_API_KEY not found. Please add it to your .env file to use the trends feature."
+  );
+}
+
+// Check for GPT_API_KEY
+if (!process.env.GPT_API_KEY) {
+  console.error(
+    "GPT_API_KEY not found. Please add it to your .env file to use the briefs feature."
+  );
+}
 
 // Initialize Supabase client with error handling
 let supabase = null;
@@ -188,6 +201,192 @@ async function fetchRedditTopics(limit = 5) {
   }
 }
 
+async function getNewPosts() {
+  if (!PH_API_KEY) {
+    console.log("Cannot fetch from Product Hunt: API key is missing.");
+    return []; // Return empty array as service is unavailable
+  }
+  const response = await fetch("https://api.producthunt.com/v2/api/graphql", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${PH_API_KEY}`,
+    },
+    body: JSON.stringify({
+      query: `
+        query {
+          posts(first: 10) {
+            edges {
+              node {
+                name
+                tagline
+                url
+                votesCount
+                commentsCount
+                createdAt
+                product {
+                  name
+                  tagline
+                  url
+                  votesCount
+                  commentsCount
+                  createdAt
+                  thumbnail {
+                    imageUrl
+                  }
+                }
+              }
+            }
+          }
+        }
+      `,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Product Hunt API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.data.posts.edges.map((edge) => ({
+    title: edge.node.name,
+    summary: edge.node.tagline,
+    image: edge.node.product.thumbnail.imageUrl,
+    url: edge.node.url,
+    id: `ph-${edge.node.createdAt}`,
+  }));
+}
+
+async function getYesterdayPosts() {
+  if (!PH_API_KEY) {
+    console.log("Cannot fetch from Product Hunt: API key is missing.");
+    return []; // Return empty array as service is unavailable
+  }
+  const response = await fetch("https://api.producthunt.com/v2/api/graphql", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${PH_API_KEY}`,
+    },
+    body: JSON.stringify({
+      query: `
+        query {
+          posts(first: 10, createdAt: {gte: "2023-01-01T00:00:00Z"}) {
+            edges {
+              node {
+                name
+                tagline
+                url
+                votesCount
+                commentsCount
+                createdAt
+                product {
+                  name
+                  tagline
+                  url
+                  votesCount
+                  commentsCount
+                  createdAt
+                  thumbnail {
+                    imageUrl
+                  }
+                }
+              }
+            }
+          }
+        }
+      `,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Product Hunt API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.data.posts.edges.map((edge) => ({
+    title: edge.node.name,
+    summary: edge.node.tagline,
+    image: edge.node.product.thumbnail.imageUrl,
+    url: edge.node.url,
+    id: `ph-${edge.node.createdAt}`,
+  }));
+}
+
+async function getHackerNewsTopStory() {
+  try {
+    const topStoriesRes = await fetch(
+      "https://hacker-news.firebaseio.com/v0/topstories.json"
+    );
+    const topStories = await topStoriesRes.json();
+    const storyId = topStories[Math.floor(Math.random() * topStories.length)];
+    const storyRes = await fetch(
+      `https://hacker-news.firebaseio.com/v0/item/${storyId}.json`
+    );
+    if (storyRes.status !== 200 || !storyRes.ok) {
+      console.error(
+        `Hacker News API error for story ${storyId}:`,
+        storyRes.status,
+        await storyRes.text()
+      );
+      return null;
+    }
+    const story = await storyRes.json();
+    return {
+      id: story.id,
+      title: story.title,
+      url: story.url,
+      summary: story.text || "No summary available.",
+      image: await getImageForTopic(story.title),
+      source: "Hacker News",
+      category: "Tech News",
+    };
+  } catch (error) {
+    console.error("Error fetching from Hacker News:", error.message);
+    return null;
+  }
+}
+
+async function getImageForTopic(topic) {
+  // A real implementation would use an image search API
+  return "https://source.unsplash.com/400x200/?tech,abstract";
+}
+
+async function getProductHuntTrends() {
+  // Mocked for now, replace with actual API call
+  return [
+    {
+      id: "ph-1",
+      title: "AI-Powered Note Taking App",
+      url: "#",
+      summary: "An app that automatically organizes your notes using AI.",
+      image: "https://source.unsplash.com/400x200/?tech,abstract",
+      source: "Product Hunt",
+      category: "Productivity",
+    },
+    {
+      id: "ph-2",
+      title: "Collaborative Whiteboard for Remote Teams",
+      url: "#",
+      summary:
+        "A real-time whiteboard to help remote teams brainstorm and collaborate.",
+      image: "https://source.unsplash.com/400x200/?tech,abstract",
+      source: "Product Hunt",
+      category: "Collaboration",
+    },
+    {
+      id: "ph-3",
+      title: "Personalized Fitness Planner",
+      url: "#",
+      summary:
+        "Get a personalized fitness plan based on your goals and preferences.",
+      image: "https://source.unsplash.com/400x200/?tech,abstract",
+      source: "Product Hunt",
+      category: "Health & Fitness",
+    },
+  ];
+}
+
 router.get("/trends", async (req, res) => {
   try {
     const { source } = req.query;
@@ -297,6 +496,34 @@ router.get("/trends", async (req, res) => {
   } catch (err) {
     console.error("Error in /api/trends:", err);
     res.status(500).json({ error: "Failed to fetch trends" });
+  }
+});
+
+router.get("/trends/posts", async (req, res) => {
+  if (!PH_API_KEY) {
+    return res.status(503).json({
+      error: "Service unavailable: Product Hunt API key not configured.",
+    });
+  }
+  try {
+    const posts = await getNewPosts();
+  } catch (err) {
+    console.error("Error in /api/trends/posts:", err);
+    res.status(500).json({ error: "Failed to fetch posts" });
+  }
+});
+
+router.get("/trends/posts/yesterday", async (req, res) => {
+  if (!PH_API_KEY) {
+    return res.status(503).json({
+      error: "Service unavailable: Product Hunt API key not configured.",
+    });
+  }
+  try {
+    const posts = await getYesterdayPosts();
+  } catch (err) {
+    console.error("Error in /api/trends/posts/yesterday:", err);
+    res.status(500).json({ error: "Failed to fetch posts" });
   }
 });
 

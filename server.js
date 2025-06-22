@@ -1,4 +1,4 @@
-import "dotenv/config";
+// import "dotenv/config";
 console.log("DEEPSEEK_API_KEY at startup:", process.env.DEEPSEEK_API_KEY);
 import express from "express";
 import fetch from "node-fetch";
