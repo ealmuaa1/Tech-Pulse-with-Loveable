@@ -1,4 +1,5 @@
 import React from "react";
+import BottomNavigation from "@/components/BottomNavigation";
 
 const mockTrends = [
   {
@@ -19,7 +20,7 @@ const mockTrends = [
 
 export default function Dashboard() {
   return (
-    <div className="p-6">
+    <div className="p-6 pb-24 min-h-screen">
       <h2 className="text-3xl font-bold mb-6">Tech Trends</h2>
       <div className="grid md:grid-cols-2 gap-6">
         {mockTrends.map((trend) => (
@@ -40,6 +41,9 @@ export default function Dashboard() {
           </div>
         ))}
       </div>
+
+      {/* Bottom Navigation */}
+      <BottomNavigation currentPage="dashboard" />
     </div>
   );
 }

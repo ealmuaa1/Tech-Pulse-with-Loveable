@@ -4,6 +4,7 @@ import { SessionContextProvider } from "@supabase/auth-helpers-react";
 import { supabase } from "@/lib/supabase";
 import TopNavigation from "@/components/TopNavigation";
 import LandingPage from "./pages/LandingPage";
+import HomePage from "./pages/HomePage";
 import Profile from "./pages/Profile";
 import Digests from "./pages/Digests";
 import Learn from "@/pages/Learn";
@@ -20,7 +21,8 @@ import { TrendProvider } from "@/contexts/TrendContext";
 /**
  * App component - Main application router
  * Routes:
- * - /: Home page
+ * - /: Landing page
+ * - /home: Personalized AI learning dashboard
  * - /login: Login page
  * - /profile: User profile page
  * - /digests: Tech digests page
@@ -40,7 +42,8 @@ function App() {
         <TrendProvider>
           <TopNavigation />
           <Routes>
-            <Route path="/" element={<LandingPage />} />
+            <Route path="/" element={<HomePage />} />
+            <Route path="/home" element={<HomePage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/digests" element={<Digests />} />
