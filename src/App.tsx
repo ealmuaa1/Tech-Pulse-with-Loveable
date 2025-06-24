@@ -6,7 +6,7 @@ import TopNavigation from "@/components/TopNavigation";
 import LandingPage from "./pages/LandingPage";
 import HomePage from "./pages/HomePage";
 import Profile from "./pages/Profile";
-import Digests from "./pages/Digests";
+import ExplorePage from "./pages/ExplorePage";
 import Learn from "@/pages/Learn";
 import TopicPage from "@/pages/TopicPage";
 import FlashcardPage from "@/pages/FlashcardPage";
@@ -25,7 +25,7 @@ import { TrendProvider } from "@/contexts/TrendContext";
  * - /home: Personalized AI learning dashboard
  * - /login: Login page
  * - /profile: User profile page
- * - /digests: Tech digests page
+ * - /explore: Explore by passion page
  * - /learn: Learning page
  * - /learn/:slug: Topic page
  * - /learn/:slug/flashcards: Flashcard page
@@ -46,7 +46,7 @@ function App() {
             <Route path="/home" element={<HomePage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/digests" element={<Digests />} />
+            <Route path="/explore" element={<ExplorePage />} />
             <Route path="/learn" element={<Learn />} />
             <Route path="/learn/:slug" element={<TopicPage />} />
             <Route path="/learn/:slug/flashcards" element={<FlashcardPage />} />

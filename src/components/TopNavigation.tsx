@@ -49,8 +49,8 @@ const TopNavigation = () => {
                     ? "Learn"
                     : segment === "ideas"
                     ? "Ideas"
-                    : segment === "digests"
-                    ? "Digests"
+                    : segment === "explore"
+                    ? "Explore"
                     : segment}
                 </span>
               </div>

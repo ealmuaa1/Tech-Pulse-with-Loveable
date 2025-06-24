@@ -93,11 +93,60 @@ export default function QuestPage() {
               };
             }
           } else {
-            setError("Topic not found.");
+            // Create a fallback topic based on the slug
+            const fallbackTopic: Topic = {
+              id: slug,
+              created_at: new Date().toISOString(),
+              title: slug
+                .split("-")
+                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(" "),
+              summary: `Learn about ${slug.replace(
+                /-/g,
+                " "
+              )} with interactive lessons and hands-on projects.`,
+              image_url: `https://source.unsplash.com/800x600/?${encodeURIComponent(
+                slug.replace(/-/g, " ")
+              )}`,
+              source: "Dynamic Quest",
+              slug: slug,
+              category: "Technology",
+              difficulty: "Beginner",
+              duration: 20 * 60, // 20 hours
+              xp: 800,
+              lessons: 6,
+            };
+            setTopic(fallbackTopic);
+            console.warn(
+              `Topic not found for slug: ${slug}, using fallback topic`
+            );
           }
         } catch (err) {
-          setError("Failed to fetch topic data.");
-          console.error(err);
+          // Even on error, create a fallback topic
+          const fallbackTopic: Topic = {
+            id: slug,
+            created_at: new Date().toISOString(),
+            title: slug
+              .split("-")
+              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(" "),
+            summary: `Learn about ${slug.replace(
+              /-/g,
+              " "
+            )} with interactive lessons and hands-on projects.`,
+            image_url: `https://source.unsplash.com/800x600/?${encodeURIComponent(
+              slug.replace(/-/g, " ")
+            )}`,
+            source: "Dynamic Quest",
+            slug: slug,
+            category: "Technology",
+            difficulty: "Beginner",
+            duration: 20 * 60, // 20 hours
+            xp: 800,
+            lessons: 6,
+          };
+          setTopic(fallbackTopic);
+          console.error("Error fetching topic, using fallback:", err);
         } finally {
           setLoading(false);
         }

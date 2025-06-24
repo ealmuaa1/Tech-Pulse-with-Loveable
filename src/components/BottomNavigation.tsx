@@ -1,6 +1,12 @@
-
 import { Link } from "react-router-dom";
-import { Home, BookOpen, GraduationCap, Lightbulb, User } from "lucide-react";
+import {
+  Home,
+  BookOpen,
+  GraduationCap,
+  Lightbulb,
+  User,
+  Heart,
+} from "lucide-react";
 
 interface BottomNavigationProps {
   currentPage: string;
@@ -9,7 +15,7 @@ interface BottomNavigationProps {
 const BottomNavigation = ({ currentPage }: BottomNavigationProps) => {
   const navItems = [
     { id: "home", label: "Home", icon: Home, path: "/" },
-    { id: "digests", label: "Digests", icon: BookOpen, path: "/digests" },
+    { id: "explore", label: "Explore", icon: Heart, path: "/explore" },
     { id: "learn", label: "Learn", icon: GraduationCap, path: "/learn" },
     { id: "ideas", label: "Ideas", icon: Lightbulb, path: "/ideas" },
     { id: "profile", label: "Profile", icon: User, path: "/profile" },
@@ -21,7 +27,7 @@ const BottomNavigation = ({ currentPage }: BottomNavigationProps) => {
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentPage === item.id;
-          
+
           return (
             <Link
               key={item.id}
