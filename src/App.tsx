@@ -14,7 +14,6 @@ import QuizPage from "@/pages/QuizPage";
 import NotFound from "@/pages/NotFound";
 import QuestPage from "@/pages/QuestPage";
 import Dashboard from "@/pages/Dashboard";
-import Ideas from "@/pages/Ideas";
 import Login from "@/pages/Login";
 import { TrendProvider } from "@/contexts/TrendContext";
 
@@ -32,7 +31,6 @@ import { TrendProvider } from "@/contexts/TrendContext";
  * - /learn/:slug/quiz: Quiz page
  * - /quest/:slug: Quest page
  * - /dashboard: Dashboard page
- * - /ideas: Ideas page
  * - *: 404 Not Found page
  */
 function App() {
@@ -53,7 +51,6 @@ function App() {
             <Route path="/learn/:slug/quiz" element={<QuizPage />} />
             <Route path="/quest/:slug" element={<QuestPage />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/ideas" element={<Ideas />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster />

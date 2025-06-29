@@ -17,7 +17,7 @@ const BottomNavigation = ({ currentPage }: BottomNavigationProps) => {
     { id: "home", label: "Home", icon: Home, path: "/" },
     { id: "explore", label: "Explore", icon: Heart, path: "/explore" },
     { id: "learn", label: "Learn", icon: GraduationCap, path: "/learn" },
-    { id: "ideas", label: "Ideas", icon: Lightbulb, path: "/ideas" },
+    // { id: "ideas", label: "Ideas", icon: Lightbulb, path: "/ideas" }, // Disabled as requested
     { id: "profile", label: "Profile", icon: User, path: "/profile" },
   ];
 
