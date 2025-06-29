@@ -11,10 +11,11 @@ import FlashcardGame from "../components/games/FlashcardGame";
 import QuizGame from "../components/games/QuizGame";
 import { Brain, Star, Puzzle, ListTodo, Bot, Gem } from "lucide-react";
 import { getTopicBySlug, Topic } from "@/lib/topicService";
+import { getQuestContent, QuestContent } from "@/lib/questContentService";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { mockQuest, mockFlashcards, mockQuizQuestions } from "@/data/mockQuest";
+import BottomNavigation from "@/components/BottomNavigation";
 
 const BadgeUnlocked = () => (
   <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-6 rounded-xl shadow-lg text-center">
@@ -39,6 +40,7 @@ const QuestNotFound = () => (
 export default function QuestPage() {
   const { slug } = useParams<{ slug: string }>();
   const [topic, setTopic] = useState<Topic | null>(null);
+  const [questContent, setQuestContent] = useState<QuestContent | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,93 +67,37 @@ export default function QuestPage() {
     }
   );
 
-  // New state for tracking completed lessons from mock data
+  // New state for tracking completed lessons from dynamic content
   const [completedLessons, setCompletedLessons] = useState<Set<string>>(
     new Set()
   );
 
   useEffect(() => {
     if (slug) {
-      const fetchTopic = async () => {
+      const fetchTopicAndContent = async () => {
         try {
           setLoading(true);
-          const data = await getTopicBySlug(slug);
-          if (data) {
-            setTopic(data);
-            // Mock lesson content if not present in data
-            if (!data.lessons) {
-              // @ts-ignore
-              data.lessons = {
-                introduction:
-                  "Welcome! This is a dynamic introduction to the topic.",
-                coreConcepts:
-                  "Here are the core concepts you need to understand.",
-                useCases: "Discover the real-world applications.",
-                practicePrompt:
-                  "Now, it's your turn. Complete this practice prompt.",
-                sources: ["Source 1", "Source 2", "Source 3"],
-              };
-            }
-          } else {
-            // Create a fallback topic based on the slug
-            const fallbackTopic: Topic = {
-              id: slug,
-              created_at: new Date().toISOString(),
-              title: slug
-                .split("-")
-                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(" "),
-              summary: `Learn about ${slug.replace(
-                /-/g,
-                " "
-              )} with interactive lessons and hands-on projects.`,
-              image_url: `https://source.unsplash.com/800x600/?${encodeURIComponent(
-                slug.replace(/-/g, " ")
-              )}`,
-              source: "Dynamic Quest",
-              slug: slug,
-              category: "Technology",
-              difficulty: "Beginner",
-              duration: 20 * 60, // 20 hours
-              xp: 800,
-              lessons: 6,
-            };
-            setTopic(fallbackTopic);
-            console.warn(
-              `Topic not found for slug: ${slug}, using fallback topic`
-            );
-          }
+          setError(null);
+
+          // Fetch topic data first
+          const topicData = await getTopicBySlug(slug);
+          setTopic(topicData);
+
+          // Get dynamic quest content based on the topic
+          const content = await getQuestContent(slug, topicData);
+          setQuestContent(content);
         } catch (err) {
-          // Even on error, create a fallback topic
-          const fallbackTopic: Topic = {
-            id: slug,
-            created_at: new Date().toISOString(),
-            title: slug
-              .split("-")
-              .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-              .join(" "),
-            summary: `Learn about ${slug.replace(
-              /-/g,
-              " "
-            )} with interactive lessons and hands-on projects.`,
-            image_url: `https://source.unsplash.com/800x600/?${encodeURIComponent(
-              slug.replace(/-/g, " ")
-            )}`,
-            source: "Dynamic Quest",
-            slug: slug,
-            category: "Technology",
-            difficulty: "Beginner",
-            duration: 20 * 60, // 20 hours
-            xp: 800,
-            lessons: 6,
-          };
-          setTopic(fallbackTopic);
-          console.error("Error fetching topic, using fallback:", err);
+          console.error("Error fetching topic and content:", err);
+          setError("Failed to load quest content");
+
+          // Create fallback content even on error
+          const fallbackContent = await getQuestContent(slug);
+          setQuestContent(fallbackContent);
         } finally {
           setLoading(false);
         }
       };
-      fetchTopic();
+      fetchTopicAndContent();
     }
   }, [slug]);
 
@@ -185,26 +131,60 @@ export default function QuestPage() {
   const allGamesCompleted = Object.values(completedGames).every(Boolean);
   const isQuestMastered = allLessonsViewed && allGamesCompleted;
 
-  if (loading) return <div className="p-8 text-center">Loading...</div>;
-  if (error) return <QuestNotFound />;
-  if (!topic) return <QuestNotFound />;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pb-24">
+        <div className="max-w-5xl mx-auto p-4 space-y-8">
+          <div className="text-center p-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <h2 className="text-xl font-semibold mb-2">Loading Quest...</h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Preparing your learning journey
+            </p>
+          </div>
+        </div>
+        <BottomNavigation currentPage="quest" />
+      </div>
+    );
+  }
 
-  const lessonContent: LessonContent =
-    (topic.lessons as unknown as LessonContent) || {
-      introduction: "No content available.",
-      coreConcepts: "No content available.",
-      useCases: "No content available.",
-      practicePrompt: "No content available.",
-      sources: [],
-    };
+  if (error && !questContent) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pb-24">
+        <div className="max-w-5xl mx-auto p-4 space-y-8">
+          <QuestNotFound />
+        </div>
+        <BottomNavigation currentPage="quest" />
+      </div>
+    );
+  }
 
-  // Use mock data for enhanced experience
-  const questData = mockQuest;
+  if (!questContent) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pb-24">
+        <div className="max-w-5xl mx-auto p-4 space-y-8">
+          <QuestNotFound />
+        </div>
+        <BottomNavigation currentPage="quest" />
+      </div>
+    );
+  }
+
+  // Convert quest content lessons to the format expected by LessonAccordion
+  const lessonContent: LessonContent = {
+    introduction: questContent.lessons[0]?.content || "No content available.",
+    coreConcepts: questContent.lessons[1]?.content || "No content available.",
+    useCases: questContent.lessons[2]?.content || "No content available.",
+    practicePrompt: questContent.lessons[3]?.content || "No content available.",
+    sources: questContent.lessons[0]?.sources || [],
+  };
+
+  // Calculate progress based on dynamic content
   const currentProgress = {
     xpPercentage: Math.min(
       100,
       Math.round(
-        (completedLessons.size / questData.lessons.length) * 50 +
+        (completedLessons.size / questContent.lessons.length) * 50 +
           (Object.keys(completedGames).filter((key) => completedGames[key])
             .length /
             4) *
@@ -216,16 +196,16 @@ export default function QuestPage() {
     ).length,
     totalModules: 4,
     completedLessons: completedLessons.size,
-    totalLessons: questData.lessons.length,
+    totalLessons: questContent.lessons.length,
   };
 
   return (
-    <>
-      <div className="max-w-5xl mx-auto p-4 space-y-8 pb-16">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pb-24">
+      <div className="max-w-5xl mx-auto p-4 space-y-8">
         <header className="mb-6 text-center">
-          <h1 className="text-4xl font-bold mb-2">{questData.title}</h1>
+          <h1 className="text-4xl font-bold mb-2">{questContent.title}</h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {questData.summary}
+            {questContent.summary}
           </p>
         </header>
 
@@ -236,12 +216,18 @@ export default function QuestPage() {
           totalModules={currentProgress.totalModules}
           completedLessons={currentProgress.completedLessons}
           totalLessons={currentProgress.totalLessons}
-          earnedBadges={questData.badges.earned}
+          earnedBadges={questContent.badges.earned}
         />
 
-        {/* Lessons with new structure */}
+        {/* Lessons with dynamic content */}
         <LessonAccordion
-          lessons={questData.lessons}
+          lessons={questContent.lessons.map((lesson) => ({
+            id: lesson.id,
+            title: lesson.title,
+            content: lesson.content,
+            sources: lesson.sources,
+            soWhat: lesson.soWhat,
+          }))}
           onLessonComplete={handleLessonComplete}
         />
 
@@ -303,8 +289,8 @@ export default function QuestPage() {
 
         {/* Badge Awards */}
         <BadgeAward
-          earnedBadges={questData.badges.earned}
-          availableBadges={questData.badges.available}
+          earnedBadges={questContent.badges.earned}
+          availableBadges={questContent.badges.available}
         />
 
         {/* Legacy Quest Mastered */}
@@ -312,17 +298,17 @@ export default function QuestPage() {
       </div>
 
       {/* Game Modals */}
-      {activeGame === "flashcards" && (
+      {activeGame === "flashcards" && questContent && (
         <FlashcardGame
-          flashcards={mockFlashcards}
+          flashcards={questContent.flashcards}
           onComplete={() => handleGameComplete("flashcards")}
           onClose={handleGameClose}
         />
       )}
 
-      {activeGame === "quiz" && (
+      {activeGame === "quiz" && questContent && (
         <QuizGame
-          questions={mockQuizQuestions}
+          questions={questContent.quizQuestions}
           onComplete={(score) => handleGameComplete("quiz", score)}
           onClose={handleGameClose}
         />
@@ -344,6 +330,8 @@ export default function QuestPage() {
           </div>
         </div>
       )}
-    </>
+
+      <BottomNavigation currentPage="quest" />
+    </div>
   );
 }
