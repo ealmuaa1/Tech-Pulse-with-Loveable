@@ -10,6 +10,7 @@ import {
 import { Topic } from "@/lib/topicService";
 import { useProductHuntTools } from "@/hooks/useProductHuntTools";
 import type { ProductHuntTool } from "@/lib/productHunt";
+import { supabase } from "@/lib/supabase";
 import {
   Brain,
   TrendingUp,
@@ -17,13 +18,15 @@ import {
   RefreshCw,
   Zap,
   ExternalLink,
+  Heart,
 } from "lucide-react";
 
 /**
- * Learn page component - Revamped with dynamic trending topics
+ * Learn page component - Revamped with dynamic trending topics and user preferences
  * Features:
  * - 4 dynamic trending topic cards in 2x2 grid (desktop) / stacked (mobile)
  * - Real-time trending data from various sources
+ * - User preference-based filtering from Supabase
  * - Shimmer loading states
  * - Auto-generated lesson/game counts
  * - Smooth hover animations with "Start Quest" buttons
@@ -33,6 +36,8 @@ const Learn = () => {
   const [trendingTopics, setTrendingTopics] = useState<Topic[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userPreferences, setUserPreferences] = useState<string[] | null>(null);
+  const [isPersonalized, setIsPersonalized] = useState(false);
 
   // AI Toolkits
   const {
@@ -41,19 +46,84 @@ const Learn = () => {
     error: toolError,
   } = useProductHuntTools();
 
+  // Fetch user preferences from Supabase
+  const fetchUserPreferences = async () => {
+    try {
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        console.log("No authenticated user found, showing all topics");
+        return null;
+      }
+
+      const { data: preferences, error: preferencesError } = await supabase
+        .from("preferences")
+        .select("favorite_topics")
+        .eq("user_id", user.id)
+        .single();
+
+      if (preferencesError) {
+        console.log(
+          "No preferences found, showing all topics:",
+          preferencesError.message
+        );
+        return null;
+      }
+
+      return preferences.favorite_topics || null;
+    } catch (err) {
+      console.error("Error fetching user preferences:", err);
+      return null;
+    }
+  };
+
+  // Filter topics based on user preferences
+  const filterTopicsByPreferences = (
+    topics: Topic[],
+    favoriteTopics: string[] | null
+  ): Topic[] => {
+    if (!favoriteTopics || favoriteTopics.length === 0) {
+      return topics;
+    }
+
+    const filtered = topics.filter((topic) =>
+      favoriteTopics.some(
+        (favorite) =>
+          topic.title.toLowerCase().includes(favorite.toLowerCase()) ||
+          topic.category?.toLowerCase().includes(favorite.toLowerCase())
+      )
+    );
+
+    return filtered.length > 0 ? filtered : topics; // Fallback to all topics if no matches
+  };
+
   const fetchTrendingTopics = async () => {
     setLoading(true);
     setError(null);
 
     try {
+      // Fetch user preferences first
+      const preferences = await fetchUserPreferences();
+      setUserPreferences(preferences);
+      setIsPersonalized(preferences && preferences.length > 0);
+
+      let topics: Topic[];
+
       if (isTrendingTopicsServiceAvailable()) {
-        const topics = await getTrendingTopics(4);
-        setTrendingTopics(topics);
+        topics = await getTrendingTopics(8); // Get more topics for filtering
       } else {
         // Use fallback topics if service is unavailable
-        const fallbackTopics = getFallbackTopics();
-        setTrendingTopics(fallbackTopics);
+        topics = getFallbackTopics();
       }
+
+      // Filter topics based on user preferences
+      const filteredTopics = filterTopicsByPreferences(topics, preferences);
+
+      // Limit to 4 topics for display
+      setTrendingTopics(filteredTopics.slice(0, 4));
     } catch (err) {
       console.error("Error fetching trending topics:", err);
       setError("Failed to load trending topics");
@@ -110,17 +180,27 @@ const Learn = () => {
               <Brain className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-blue-700 dark:from-white dark:to-blue-400 bg-clip-text text-transparent">
-              Trending Learning Topics
+              {isPersonalized
+                ? "Your Personalized Topics"
+                : "Trending Learning Topics"}
             </h1>
           </div>
 
           <p className="text-lg text-gray-600 dark:text-gray-400 mb-6 max-w-2xl mx-auto">
-            Discover the hottest tech topics and start your learning journey
-            with interactive quests, hands-on projects, and gamified
-            experiences.
+            {isPersonalized
+              ? "Discover topics tailored to your interests and start your learning journey with interactive quests and hands-on projects."
+              : "Discover the hottest tech topics and start your learning journey with interactive quests, hands-on projects, and gamified experiences."}
           </p>
 
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-center gap-4 flex-wrap">
+            {isPersonalized && (
+              <Badge
+                variant="secondary"
+                className="flex items-center gap-2 bg-pink-100 dark:bg-pink-900/20 text-pink-700 dark:text-pink-300"
+              >
+                <Heart className="w-4 h-4" />✨ Personalized
+              </Badge>
+            )}
             <Badge variant="secondary" className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
               Live Data
@@ -139,6 +219,19 @@ const Learn = () => {
               </button>
             )}
           </div>
+
+          {/* Show current interests if personalized */}
+          {isPersonalized && userPreferences && (
+            <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">
+                <strong>Your interests:</strong> {userPreferences.join(", ")}
+              </p>
+              <p className="text-xs text-blue-600 dark:text-blue-400">
+                Topics are filtered based on your saved preferences. Update your
+                profile to change your interests.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Error State */}
