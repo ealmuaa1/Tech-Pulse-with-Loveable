@@ -27,42 +27,6 @@ import { toast } from "sonner";
 
 // Mock data for passion sections
 const passionSections = {
-  "Skills & Learning": [
-    {
-      id: "sl-1",
-      title: "AI & Machine Learning Mastery",
-      description:
-        "From neural networks to deep learning, master the AI revolution",
-      questCount: 12,
-      toolCount: 8,
-      badges: ["Trending", "Advanced"],
-      category: "Skills & Learning",
-      gradient: "from-purple-500 to-pink-500",
-      icon: <Brain className="w-6 h-6" />,
-    },
-    {
-      id: "sl-2",
-      title: "Full-Stack Development",
-      description: "Build end-to-end applications with modern frameworks",
-      questCount: 15,
-      toolCount: 12,
-      badges: ["Popular", "Beginner"],
-      category: "Skills & Learning",
-      gradient: "from-blue-500 to-cyan-500",
-      icon: <BookOpen className="w-6 h-6" />,
-    },
-    {
-      id: "sl-3",
-      title: "Cloud Architecture & DevOps",
-      description: "Scale applications with cloud-native technologies",
-      questCount: 9,
-      toolCount: 6,
-      badges: ["High Demand", "Intermediate"],
-      category: "Skills & Learning",
-      gradient: "from-green-500 to-teal-500",
-      icon: <Zap className="w-6 h-6" />,
-    },
-  ],
   "Professional Growth": [
     {
       id: "pg-1",
@@ -72,7 +36,7 @@ const passionSections = {
       toolCount: 5,
       badges: ["Executive", "Advanced"],
       category: "Professional Growth",
-      gradient: "from-orange-500 to-red-500",
+      gradient: "from-slate-500 to-slate-700",
       icon: <Target className="w-6 h-6" />,
     },
     {
@@ -83,8 +47,19 @@ const passionSections = {
       toolCount: 7,
       badges: ["Strategic", "Intermediate"],
       category: "Professional Growth",
-      gradient: "from-indigo-500 to-purple-500",
+      gradient: "from-indigo-500 to-indigo-700",
       icon: <Briefcase className="w-6 h-6" />,
+    },
+    {
+      id: "pg-3",
+      title: "Technical Mentorship",
+      description: "Guide and mentor junior engineers for team growth",
+      questCount: 5,
+      toolCount: 3,
+      badges: ["Mentor", "Growth"],
+      category: "Professional Growth",
+      gradient: "from-gray-500 to-gray-700",
+      icon: <Users className="w-6 h-6" />,
     },
   ],
   "Startup & Tech Ideas": [
@@ -96,7 +71,7 @@ const passionSections = {
       toolCount: 9,
       badges: ["Entrepreneurial", "Practical"],
       category: "Startup & Tech Ideas",
-      gradient: "from-yellow-500 to-orange-500",
+      gradient: "from-rose-400 to-rose-700",
       icon: <Rocket className="w-6 h-6" />,
     },
     {
@@ -107,8 +82,19 @@ const passionSections = {
       toolCount: 4,
       badges: ["Business", "Advanced"],
       category: "Startup & Tech Ideas",
-      gradient: "from-pink-500 to-rose-500",
+      gradient: "from-pink-400 to-pink-700",
       icon: <TrendingUp className="w-6 h-6" />,
+    },
+    {
+      id: "st-3",
+      title: "Pitch Deck Mastery",
+      description: "Craft compelling pitch decks for investors",
+      questCount: 3,
+      toolCount: 2,
+      badges: ["Pitch", "Presentation"],
+      category: "Startup & Tech Ideas",
+      gradient: "from-yellow-400 to-yellow-700",
+      icon: <Star className="w-6 h-6" />,
     },
   ],
   "Personal Productivity": [
@@ -120,7 +106,7 @@ const passionSections = {
       toolCount: 15,
       badges: ["Life Changing", "Beginner"],
       category: "Personal Productivity",
-      gradient: "from-emerald-500 to-green-500",
+      gradient: "from-emerald-400 to-emerald-700",
       icon: <Lightbulb className="w-6 h-6" />,
     },
     {
@@ -131,8 +117,19 @@ const passionSections = {
       toolCount: 8,
       badges: ["Essential", "Intermediate"],
       category: "Personal Productivity",
-      gradient: "from-violet-500 to-purple-500",
+      gradient: "from-violet-400 to-violet-700",
       icon: <Users className="w-6 h-6" />,
+    },
+    {
+      id: "pp-3",
+      title: "Focus & Deep Work",
+      description: "Master deep work and focus techniques for productivity",
+      questCount: 2,
+      toolCount: 4,
+      badges: ["Focus", "Discipline"],
+      category: "Personal Productivity",
+      gradient: "from-blue-400 to-blue-700",
+      icon: <Clock className="w-6 h-6" />,
     },
   ],
 };
@@ -385,76 +382,62 @@ const ExplorePage = () => {
         {Object.entries(passionSections).map(([sectionTitle, cards]) => (
           <div key={sectionTitle} className="mb-12">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
-              {sectionTitle === "Skills & Learning" && (
-                <BookOpen className="w-6 h-6 text-purple-500" />
-              )}
               {sectionTitle === "Professional Growth" && (
-                <TrendingUp className="w-6 h-6 text-orange-500" />
+                <TrendingUp className="w-6 h-6 text-slate-500" />
               )}
               {sectionTitle === "Startup & Tech Ideas" && (
-                <Rocket className="w-6 h-6 text-pink-500" />
+                <Rocket className="w-6 h-6 text-rose-500" />
               )}
               {sectionTitle === "Personal Productivity" && (
-                <Zap className="w-6 h-6 text-green-500" />
+                <Zap className="w-6 h-6 text-emerald-500" />
               )}
               {sectionTitle}
             </h2>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {cards.map((card) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {cards.slice(0, 3).map((card) => (
                 <Card
                   key={card.id}
-                  className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 overflow-hidden transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl cursor-pointer group"
+                  className="bg-gradient-to-br from-white via-slate-50 to-slate-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-2xl shadow-md hover:shadow-xl border border-slate-200 dark:border-gray-700 p-6 flex flex-col items-center transition-all duration-300 group"
                 >
-                  <CardHeader className="pb-4">
-                    <div
-                      className={`w-full h-32 bg-gradient-to-br ${card.gradient} rounded-lg flex items-center justify-center mb-4 group-hover:scale-105 transition-transform duration-300`}
-                    >
-                      <div className="text-white">{card.icon}</div>
-                    </div>
-                    <CardTitle className="text-xl font-bold line-clamp-2 group-hover:text-purple-600 transition-colors">
-                      {card.title}
-                    </CardTitle>
-                  </CardHeader>
-
-                  <CardContent>
-                    <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm leading-relaxed line-clamp-2">
-                      {card.description}
-                    </p>
-
-                    {/* Stats */}
-                    <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
-                      <div className="flex items-center gap-1">
-                        <Target className="w-4 h-4" />
-                        <span>{card.questCount} quests</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Zap className="w-4 h-4" />
-                        <span>{card.toolCount} tools</span>
-                      </div>
-                    </div>
-
-                    {/* Badges */}
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {card.badges.map((badge) => (
-                        <Badge
-                          key={badge}
-                          className={`text-xs ${getBadgeColor(badge)}`}
-                        >
-                          {badge}
-                        </Badge>
-                      ))}
-                    </div>
-
-                    {/* Explore Button */}
-                    <Button
-                      onClick={() => handleExploreClick(card.id, card.category)}
-                      className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-none"
-                    >
-                      <Play className="w-4 h-4 mr-2" />
-                      Explore
-                    </Button>
-                  </CardContent>
+                  <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-gray-800 flex items-center justify-center mb-3 shadow-sm">
+                    <span className="text-indigo-500 dark:text-indigo-400 text-2xl">
+                      {card.icon}
+                    </span>
+                  </div>
+                  <CardTitle className="text-xl font-bold text-center mb-2 group-hover:text-indigo-600 transition-colors">
+                    {card.title}
+                  </CardTitle>
+                  <p className="text-gray-500 dark:text-gray-400 text-center mb-4 text-sm leading-relaxed line-clamp-2">
+                    {card.description}
+                  </p>
+                  <div className="flex gap-3 justify-center mb-3">
+                    <span className="flex items-center gap-1 bg-slate-200 dark:bg-gray-700 px-3 py-1 rounded-full text-xs">
+                      <Target className="w-4 h-4" />
+                      {card.questCount} quests
+                    </span>
+                    <span className="flex items-center gap-1 bg-slate-200 dark:bg-gray-700 px-3 py-1 rounded-full text-xs">
+                      <Zap className="w-4 h-4" />
+                      {card.toolCount} tools
+                    </span>
+                  </div>
+                  <div className="flex gap-2 justify-center mb-4 flex-wrap">
+                    {card.badges.map((badge) => (
+                      <span
+                        key={badge}
+                        className="px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200 shadow-sm"
+                      >
+                        {badge}
+                      </span>
+                    ))}
+                  </div>
+                  <Button
+                    onClick={() => handleExploreClick(card.id, card.category)}
+                    className="w-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white shadow-md py-2 mt-auto"
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Explore
+                  </Button>
                 </Card>
               ))}
             </div>
@@ -514,59 +497,6 @@ const ExplorePage = () => {
                       <Award className="w-4 h-4" />
                       <span>{card.completionRate}% complete</span>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Recently Viewed by Others Section */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
-            <Eye className="w-6 h-6 text-blue-500" />
-            Recently Viewed by Others
-          </h2>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mockRecentlyViewed.map((card) => (
-              <Card
-                key={card.id}
-                className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 overflow-hidden transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl cursor-pointer"
-                onClick={() => handleCardClick(card.id)}
-              >
-                <div className="relative h-40 overflow-hidden">
-                  <img
-                    src={card.image}
-                    alt={card.title}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
-                  <Badge className="absolute top-3 left-3 bg-white/90 dark:bg-gray-800/90 text-gray-800 dark:text-gray-200 backdrop-blur-sm text-xs">
-                    {card.category}
-                  </Badge>
-                </div>
-
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg font-bold line-clamp-2">
-                    {card.title}
-                  </CardTitle>
-                </CardHeader>
-
-                <CardContent className="pt-0">
-                  <p className="text-gray-600 dark:text-gray-400 mb-3 text-sm leading-relaxed line-clamp-2">
-                    {card.description}
-                  </p>
-
-                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                    <span
-                      className={`px-2 py-1 rounded-full ${getDifficultyColor(
-                        card.difficulty
-                      )}`}
-                    >
-                      {card.difficulty}
-                    </span>
-                    <span>{card.estimatedTime}</span>
                   </div>
                 </CardContent>
               </Card>
