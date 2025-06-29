@@ -18,7 +18,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { auth } from "@/lib/firebase";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { User as FirebaseUser } from "firebase/auth";
 import { SettingsModal } from "@/components/ui/settings-modal";
 import { UserSettings, loadUserSettings, saveSettings } from "@/lib/settings";
@@ -113,6 +113,8 @@ const Profile: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     const fetchUserAndProfile = async () => {
       const {
@@ -128,28 +130,20 @@ const Profile: React.FC = () => {
 
       if (supabaseUser) {
         setUser(supabaseUser);
-        const { data, error } = await supabase
-          .from("profiles")
+
+        // Fetch preferences from preferences table
+        const { data: preferences, error: preferencesError } = await supabase
+          .from("preferences")
           .select("favorite_topics")
-          .eq("id", supabaseUser.id)
+          .eq("user_id", supabaseUser.id)
           .single();
 
-        if (!error && data) {
-          try {
-            const parsed = JSON.parse(data.favorite_topics);
-            setFavoriteTopics(Array.isArray(parsed) ? parsed : []);
-          } catch (e) {
-            setFavoriteTopics([]);
-          }
+        if (!preferencesError && preferences) {
+          // favorite_topics is already an array, no need to parse
+          setFavoriteTopics(preferences.favorite_topics || []);
         } else {
-          // Upsert a profile if it doesn't exist
-          await supabase.from("profiles").upsert({
-            id: supabaseUser.id,
-            email: supabaseUser.email,
-            full_name:
-              supabaseUser.user_metadata?.full_name || supabaseUser.email,
-            favorite_topics: JSON.stringify([]),
-          });
+          // No preferences found, start with empty array
+          setFavoriteTopics([]);
         }
       }
       setLoading(false);
@@ -195,6 +189,17 @@ const Profile: React.FC = () => {
   const memoizedInterests = useMemo(() => interests, []);
   const memoizedAchievements = useMemo(() => achievements, []);
 
+  // Debounced save function to prevent duplicate calls
+  const debouncedSave = () => {
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    debounceTimeoutRef.current = setTimeout(() => {
+      savePreferences();
+    }, 300); // 300ms debounce delay
+  };
+
   const savePreferences = async () => {
     if (!user) return;
 
@@ -202,16 +207,34 @@ const Profile: React.FC = () => {
     setSaveSuccess(false);
 
     try {
-      const { error } = await supabase.from("profiles").upsert({
-        id: user.id,
-        favorite_topics: JSON.stringify(favoriteTopics),
-      });
+      // Check if preferences row exists for this user
+      const { data: existingPreferences } = await supabase
+        .from("preferences")
+        .select("user_id")
+        .eq("user_id", user.id)
+        .single();
 
-      if (error) throw error;
+      if (existingPreferences) {
+        // Update existing preferences
+        const { error } = await supabase
+          .from("preferences")
+          .update({ favorite_topics: favoriteTopics })
+          .eq("user_id", user.id);
+
+        if (error) throw error;
+      } else {
+        // Insert new preferences row
+        const { error } = await supabase.from("preferences").insert({
+          user_id: user.id,
+          favorite_topics: favoriteTopics,
+        });
+
+        if (error) throw error;
+      }
 
       setSaveSuccess(true);
       toast({
-        title: "Preferences saved",
+        title: "✅ Preferences saved!",
         description: "Your favorite topics have been updated successfully.",
       });
 
@@ -302,7 +325,7 @@ const Profile: React.FC = () => {
                   Favorite Topics
                 </h3>
                 <Button
-                  onClick={savePreferences}
+                  onClick={debouncedSave}
                   disabled={isSaving}
                   className={`relative ${
                     saveSuccess
@@ -408,7 +431,7 @@ const Profile: React.FC = () => {
               onChange={setFavoriteTopics}
             />
             <Button
-              onClick={savePreferences}
+              onClick={debouncedSave}
               className="mt-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md hover:from-purple-700 hover:to-pink-700 transition-all duration-300"
             >
               Save Preferences
