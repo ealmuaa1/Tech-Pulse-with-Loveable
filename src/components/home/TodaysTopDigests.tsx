@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Clock, ExternalLink, TrendingUp, Sparkles } from "lucide-react";
+import { Clock, ExternalLink, TrendingUp, Sparkles, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { fetchTrendingTopics } from "@/lib/topicFetcher";
+import { usePersonalizedHomeFeed } from "@/hooks/useEnhancedContent";
+import { useFeatureFlag } from "@/hooks/useEnhancedContent";
+import { TopicMatcher } from "@/lib/topicExtraction";
+import { supabase } from "@/lib/supabase";
 
 export interface TopicCard {
   id: string;
@@ -121,8 +125,23 @@ const getCategoryColor = (category: string) => {
 const TodaysTopDigests: React.FC<TodaysTopDigestsProps> = ({
   maxDisplay = 4,
 }) => {
-  const [topics, setTopics] = useState<TopicCard[]>([]);
+  const [originalTopics, setOriginalTopics] = useState<TopicCard[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Enhanced personalization features
+  const shouldUsePersonalization = useFeatureFlag(
+    "enhanced-personalization",
+    true
+  );
+  const {
+    personalizedFeed: topics,
+    isPersonalized,
+    isLoading: isPersonalizing,
+  } = usePersonalizedHomeFeed(originalTopics, {
+    maxItems: maxDisplay,
+    sortByRelevance: true,
+    includeFallback: true,
+  });
 
   useEffect(() => {
     const fetchTopics = async () => {
@@ -130,13 +149,13 @@ const TodaysTopDigests: React.FC<TodaysTopDigestsProps> = ({
         setIsLoading(true);
 
         // Fetch topics from multiple sources using our dynamic fetcher
-        const fetchedTopics = await fetchTrendingTopics(maxDisplay);
-        setTopics(fetchedTopics);
+        const fetchedTopics = await fetchTrendingTopics(maxDisplay * 2); // Get more for filtering
+        setOriginalTopics(fetchedTopics);
       } catch (error) {
         console.error("Error fetching topics:", error);
         // Fallback to mock data
         const mockTopics = generateMockTopics();
-        setTopics(mockTopics.slice(0, maxDisplay));
+        setOriginalTopics(mockTopics.slice(0, maxDisplay * 2));
       } finally {
         setIsLoading(false);
       }
@@ -149,7 +168,44 @@ const TodaysTopDigests: React.FC<TodaysTopDigestsProps> = ({
     return () => clearInterval(interval);
   }, [maxDisplay]);
 
-  if (isLoading) {
+  // Supabase subscription fix
+  useEffect(() => {
+    let subscription;
+    const setupRealtimeUpdates = async () => {
+      try {
+        const {
+          data: { user },
+          error: userError,
+        } = await supabase.auth.getUser();
+        if (userError || !user) {
+          return;
+        }
+        subscription = supabase
+          .channel("home-preferences-changes")
+          .on(
+            "postgres_changes",
+            {
+              event: "*",
+              schema: "public",
+              table: "preferences",
+              filter: `user_id=eq.${user.id}`,
+            },
+            (payload) => {
+              setOriginalTopics([...originalTopics]);
+            }
+          )
+          .subscribe();
+      } catch (err) {
+        console.error("Error setting up real-time updates:", err);
+      }
+    };
+    setupRealtimeUpdates();
+    return () => {
+      if (subscription) subscription.unsubscribe();
+    };
+  }, [originalTopics]);
+
+  if (isLoading || isPersonalizing) {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -158,7 +214,7 @@ const TodaysTopDigests: React.FC<TodaysTopDigestsProps> = ({
             Today's Top Digests
           </h2>
           <Badge variant="secondary" className="animate-pulse">
-            Loading...
+            {isPersonalizing ? "Personalizing..." : "Loading..."}
           </Badge>
         </div>
 
@@ -182,10 +238,21 @@ const TodaysTopDigests: React.FC<TodaysTopDigestsProps> = ({
           <Sparkles className="w-6 h-6 text-purple-600" />
           Today's Top Digests
         </h2>
-        <Badge variant="secondary" className="flex items-center gap-1">
-          <TrendingUp className="w-3 h-3" />
-          Live
-        </Badge>
+        <div className="flex items-center gap-2">
+          {isPersonalized && shouldUsePersonalization && (
+            <Badge
+              variant="secondary"
+              className="flex items-center gap-1 bg-pink-100 dark:bg-pink-900/20 text-pink-700 dark:text-pink-300"
+            >
+              <Heart className="w-3 h-3" />
+              Personalized
+            </Badge>
+          )}
+          <Badge variant="secondary" className="flex items-center gap-1">
+            <TrendingUp className="w-3 h-3" />
+            Live
+          </Badge>
+        </div>
       </div>
 
       {/* Topic Cards Grid */}
@@ -200,6 +267,9 @@ const TodaysTopDigests: React.FC<TodaysTopDigestsProps> = ({
               <img
                 src={topic.image}
                 alt={topic.title}
+                onError={(e) => {
+                  e.currentTarget.src = "/placeholder.svg";
+                }}
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 loading="lazy"
               />

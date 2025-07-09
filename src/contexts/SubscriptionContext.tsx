@@ -7,7 +7,7 @@ import React, {
   useCallback,
 } from "react";
 import { UserSubscription, SubscriptionFeature, PurchaseItem } from "@/types";
-import { useAuth } from "@/contexts/AuthProvider";
+import { useUser } from "@supabase/auth-helpers-react";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
@@ -34,7 +34,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     null
   );
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const user = useUser();
 
   // Default free tier features
   const FREE_TIER_FEATURES: SubscriptionFeature[] = [
@@ -89,7 +89,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       const { data, error } = await supabase
         .from("user_subscriptions")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", user?.id)
         .single();
 
       if (error) {
@@ -105,8 +105,8 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
 
           // Create default free subscription (in-memory only, no database)
           const freeSubscription: UserSubscription = {
-            id: `free_${user.id}`,
-            user_id: user.id,
+            id: `free_${user?.id}`,
+            user_id: user?.id,
             tier: "Free",
             status: "Active",
             features: FREE_TIER_FEATURES,
@@ -129,8 +129,8 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       if (!data) {
         // No subscription found - create default free subscription
         const freeSubscription: UserSubscription = {
-          id: `free_${user.id}`,
-          user_id: user.id,
+          id: `free_${user?.id}`,
+          user_id: user?.id,
           tier: "Free",
           status: "Active",
           features: FREE_TIER_FEATURES,
@@ -250,13 +250,19 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
                   : f
               ),
             })
-            .eq("user_id", user.id);
+            .eq("user_id", user?.id);
 
           if (error && error.code !== "42P01" && error.code !== "PGRST106") {
-            console.log("SubscriptionContext: Could not update usage in database:", error.message);
+            console.log(
+              "SubscriptionContext: Could not update usage in database:",
+              error.message
+            );
           }
         } catch (dbError) {
-          console.log("SubscriptionContext: Database update failed, updating local state only:", dbError);
+          console.log(
+            "SubscriptionContext: Database update failed, updating local state only:",
+            dbError
+          );
         }
 
         // Always update local state regardless of database success
@@ -329,13 +335,19 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
             status: "Trial",
             trial_ends_at: trialEndDate.toISOString(),
           })
-          .eq("user_id", user.id);
+          .eq("user_id", user?.id);
 
         if (error && error.code !== "42P01" && error.code !== "PGRST106") {
-          console.log("SubscriptionContext: Could not update trial in database:", error.message);
+          console.log(
+            "SubscriptionContext: Could not update trial in database:",
+            error.message
+          );
         }
       } catch (dbError) {
-        console.log("SubscriptionContext: Database trial update failed, updating local state only:", dbError);
+        console.log(
+          "SubscriptionContext: Database trial update failed, updating local state only:",
+          dbError
+        );
       }
 
       // Always update local state
@@ -372,13 +384,19 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
             status: "Cancelled",
             cancelled_at: new Date().toISOString(),
           })
-          .eq("user_id", user.id);
+          .eq("user_id", user?.id);
 
         if (error && error.code !== "42P01" && error.code !== "PGRST106") {
-          console.log("SubscriptionContext: Could not cancel subscription in database:", error.message);
+          console.log(
+            "SubscriptionContext: Could not cancel subscription in database:",
+            error.message
+          );
         }
       } catch (dbError) {
-        console.log("SubscriptionContext: Database cancellation failed, updating local state only:", dbError);
+        console.log(
+          "SubscriptionContext: Database cancellation failed, updating local state only:",
+          dbError
+        );
       }
 
       // Always update local state

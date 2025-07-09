@@ -11,33 +11,24 @@ import { Topic } from "@/lib/topicService";
 import { useProductHuntTools } from "@/hooks/useProductHuntTools";
 import type { ProductHuntTool } from "@/lib/productHunt";
 import { supabase } from "@/lib/supabase";
+import { DebugTopicFiltering } from "@/components/DebugTopicFiltering";
+import { useUser } from "@supabase/auth-helpers-react";
 import {
   Brain,
   TrendingUp,
   Sparkles,
-  RefreshCw,
+  Heart,
   Zap,
   ExternalLink,
-  Heart,
 } from "lucide-react";
 
-/**
- * Learn page component - Revamped with dynamic trending topics and user preferences
- * Features:
- * - 4 dynamic trending topic cards in 2x2 grid (desktop) / stacked (mobile)
- * - Real-time trending data from various sources
- * - User preference-based filtering from Supabase
- * - Shimmer loading states
- * - Auto-generated lesson/game counts
- * - Smooth hover animations with "Start Quest" buttons
- * - Responsive design with Tailwind CSS
- */
 const Learn = () => {
-  const [trendingTopics, setTrendingTopics] = useState<Topic[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [userPreferences, setUserPreferences] = useState<string[] | null>(null);
-  const [isPersonalized, setIsPersonalized] = useState(false);
+  const user = useUser();
+  const [allTopics, setAllTopics] = useState<Topic[]>([]);
+  const [userPreferences, setUserPreferences] = useState<string[]>([]);
+  const [filteredTopics, setFilteredTopics] = useState<Topic[]>([]);
+  const [loadingTopics, setLoadingTopics] = useState(true);
+  const [loadingPreferences, setLoadingPreferences] = useState(true);
 
   // AI Toolkits
   const {
@@ -46,134 +37,102 @@ const Learn = () => {
     error: toolError,
   } = useProductHuntTools();
 
-  // Fetch user preferences from Supabase
-  const fetchUserPreferences = async () => {
-    try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        console.log("No authenticated user found, showing all topics");
-        return null;
-      }
-
-      const { data: preferences, error: preferencesError } = await supabase
-        .from("preferences")
-        .select("favorite_topics")
-        .eq("user_id", user.id)
-        .single();
-
-      if (preferencesError) {
-        console.log(
-          "No preferences found, showing all topics:",
-          preferencesError.message
-        );
-        return null;
-      }
-
-      return preferences.favorite_topics || null;
-    } catch (err) {
-      console.error("Error fetching user preferences:", err);
-      return null;
-    }
-  };
-
-  // Filter topics based on user preferences
-  const filterTopicsByPreferences = (
-    topics: Topic[],
-    favoriteTopics: string[] | null
-  ): Topic[] => {
-    if (!favoriteTopics || favoriteTopics.length === 0) {
-      return topics;
-    }
-
-    const filtered = topics.filter((topic) =>
-      favoriteTopics.some(
-        (favorite) =>
-          topic.title.toLowerCase().includes(favorite.toLowerCase()) ||
-          topic.category?.toLowerCase().includes(favorite.toLowerCase())
-      )
-    );
-
-    return filtered.length > 0 ? filtered : topics; // Fallback to all topics if no matches
-  };
-
-  const fetchTrendingTopics = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Fetch user preferences first
-      const preferences = await fetchUserPreferences();
-      setUserPreferences(preferences);
-      setIsPersonalized(preferences && preferences.length > 0);
-
-      let topics: Topic[];
-
-      if (isTrendingTopicsServiceAvailable()) {
-        topics = await getTrendingTopics(8); // Get more topics for filtering
-      } else {
-        // Use fallback topics if service is unavailable
-        topics = getFallbackTopics();
-      }
-
-      // Filter topics based on user preferences
-      const filteredTopics = filterTopicsByPreferences(topics, preferences);
-
-      // Limit to 4 topics for display
-      setTrendingTopics(filteredTopics.slice(0, 4));
-    } catch (err) {
-      console.error("Error fetching trending topics:", err);
-      setError("Failed to load trending topics");
-      // Use fallback topics on error
-      const fallbackTopics = getFallbackTopics();
-      setTrendingTopics(fallbackTopics);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Fetch user preferences (static, no real-time)
   useEffect(() => {
-    fetchTrendingTopics();
+    const loadPreferences = async () => {
+      if (!user?.id) {
+        setUserPreferences([]);
+        setLoadingPreferences(false);
+        return;
+      }
+
+      setLoadingPreferences(true);
+      try {
+        const { data, error } = await supabase
+          .from("preferences")
+          .select("favorite_topics")
+          .eq("user_id", user.id)
+          .single();
+
+        if (data?.favorite_topics) {
+          setUserPreferences(data.favorite_topics);
+        } else {
+          setUserPreferences([]);
+        }
+      } catch (error) {
+        console.error("Error loading preferences:", error);
+        setUserPreferences([]);
+      } finally {
+        setLoadingPreferences(false);
+      }
+    };
+
+    loadPreferences();
+  }, [user?.id]);
+
+  // Fetch all topics (static, no real-time)
+  useEffect(() => {
+    const loadTopics = async () => {
+      setLoadingTopics(true);
+      try {
+        let topics: Topic[];
+        if (isTrendingTopicsServiceAvailable()) {
+          topics = await getTrendingTopics(8);
+        } else {
+          topics = getFallbackTopics();
+        }
+        setAllTopics(topics);
+      } catch (error) {
+        console.error("Error loading topics:", error);
+        setAllTopics([]);
+      } finally {
+        setLoadingTopics(false);
+      }
+    };
+
+    loadTopics();
   }, []);
 
-  // Shimmer loading component
-  const ShimmerCard = () => (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm animate-pulse">
-      {/* Image placeholder */}
-      <div className="aspect-[4/3] bg-gray-200 dark:bg-gray-700" />
+  // Simple filtering logic - sync filteredTopics when allTopics or userPreferences change
+  useEffect(() => {
+    if (!loadingTopics && !loadingPreferences) {
+      if (!userPreferences || userPreferences.length === 0) {
+        // If no preferences, show all topics
+        setFilteredTopics(allTopics);
+      } else {
+        // Filter topics by matching any tag with a preference
+        const filtered = allTopics.filter((topic) => {
+          const topicText = [
+            topic.title?.toLowerCase() || "",
+            topic.category?.toLowerCase() || "",
+            topic.summary?.toLowerCase() || "",
+          ].join(" ");
 
-      {/* Content placeholder */}
-      <div className="p-6 space-y-4">
-        {/* Title */}
-        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded-md w-3/4" />
+          return userPreferences.some((pref) =>
+            topicText.includes(pref.toLowerCase())
+          );
+        });
+        setFilteredTopics(filtered);
+      }
+    }
+  }, [allTopics, userPreferences, loadingTopics, loadingPreferences]);
 
-        {/* Summary lines */}
-        <div className="space-y-2">
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full" />
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6" />
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3" />
+  if (loadingTopics || loadingPreferences) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading topics...</p>
         </div>
-
-        {/* Stats row */}
-        <div className="flex justify-between">
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16" />
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20" />
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16" />
-        </div>
-
-        {/* Participants */}
-        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-24 mx-auto" />
       </div>
-    </div>
-  );
+    );
+  }
+
+  const isPersonalized = userPreferences && userPreferences.length > 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pb-24">
       <main className="max-w-7xl mx-auto px-6 py-8">
-        {/* Header Section */}
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-lg">
@@ -185,13 +144,11 @@ const Learn = () => {
                 : "Trending Learning Topics"}
             </h1>
           </div>
-
           <p className="text-lg text-gray-600 dark:text-gray-400 mb-6 max-w-2xl mx-auto">
             {isPersonalized
               ? "Discover topics tailored to your interests and start your learning journey with interactive quests and hands-on projects."
               : "Discover the hottest tech topics and start your learning journey with interactive quests, hands-on projects, and gamified experiences."}
           </p>
-
           <div className="flex items-center justify-center gap-4 flex-wrap">
             {isPersonalized && (
               <Badge
@@ -209,18 +166,7 @@ const Learn = () => {
               <Sparkles className="w-4 h-4" />
               Updated Hourly
             </Badge>
-            {!loading && (
-              <button
-                onClick={fetchTrendingTopics}
-                className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-              >
-                <RefreshCw className="w-4 h-4" />
-                Refresh
-              </button>
-            )}
           </div>
-
-          {/* Show current interests if personalized */}
           {isPersonalized && userPreferences && (
             <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
               <p className="text-sm text-blue-700 dark:text-blue-300 mb-2">
@@ -234,52 +180,47 @@ const Learn = () => {
           )}
         </div>
 
-        {/* Error State */}
-        {error && !loading && trendingTopics.length === 0 && (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 mx-auto mb-4 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
-              <span className="text-2xl">⚠️</span>
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              Unable to Load Topics
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
-            <button
-              onClick={fetchTrendingTopics}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
-            >
-              Try Again
-            </button>
-          </div>
-        )}
-
-        {/* Main Content - 4 Topic Cards */}
+        {/* Topics Grid - Always render filteredTopics */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-          {loading
-            ? // Show shimmer loading cards
-              Array.from({ length: 4 }).map((_, index) => (
-                <ShimmerCard key={index} />
-              ))
-            : // Show actual topic cards
-              trendingTopics.map((topic) => (
-                <TopicCard
-                  key={topic.id}
-                  title={topic.title}
-                  summary={topic.summary}
-                  imageUrl={topic.image_url || topic.image || ""}
-                  slug={topic.slug}
-                  source={topic.source}
-                  category={topic.category}
-                  difficulty={topic.difficulty}
-                  lessonCount={topic.lessons}
-                  estimatedTime={
-                    topic.duration
-                      ? `${Math.round(topic.duration / 60)}h`
-                      : undefined
-                  }
-                  fallbackImage="/placeholder.svg"
-                />
-              ))}
+          {filteredTopics.length === 0 ? (
+            <div className="col-span-2 text-center py-12">
+              <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
+                <Brain className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                {isPersonalized
+                  ? "No Topics Match Your Preferences"
+                  : "No Topics Available"}
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4 max-w-md mx-auto">
+                {isPersonalized
+                  ? `We couldn't find any topics matching your selected interests: ${userPreferences.join(
+                      ", "
+                    )}`
+                  : "No learning topics are currently available. Please check back later."}
+              </p>
+            </div>
+          ) : (
+            filteredTopics.map((topic) => (
+              <TopicCard
+                key={topic.id}
+                title={topic.title}
+                summary={topic.summary}
+                imageUrl={topic.image_url || topic.image || "/placeholder.svg"}
+                slug={topic.slug}
+                source={topic.source}
+                category={topic.category}
+                difficulty={topic.difficulty}
+                lessonCount={topic.lessons}
+                estimatedTime={
+                  topic.duration
+                    ? `${Math.round(topic.duration / 60)}h`
+                    : undefined
+                }
+                fallbackImage="/placeholder.svg"
+              />
+            ))
+          )}
         </div>
 
         {/* Trending AI Toolkits Section */}
@@ -315,26 +256,23 @@ const Learn = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {isLoadingTools
                 ? // Loading skeletons
-                  Array.from({ length: 6 }).map((_, idx) => (
+                  Array.from({ length: 6 }).map((_, index) => (
                     <div
-                      key={idx}
-                      className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden animate-pulse"
+                      key={index}
+                      className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden h-80 animate-pulse"
                     >
                       <div className="p-6">
                         <div className="flex items-start gap-4 mb-4">
-                          <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+                          <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
                           <div className="flex-1">
-                            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-2" />
-                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2" />
+                            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
+                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-20"></div>
                           </div>
                         </div>
-                        <div className="space-y-2 mb-4">
-                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full" />
-                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/5" />
-                        </div>
-                        <div className="flex gap-3">
-                          <div className="flex-1 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg" />
-                          <div className="flex-1 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+                        <div className="space-y-2">
+                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
                         </div>
                       </div>
                     </div>
@@ -375,57 +313,38 @@ const Learn = () => {
                         </p>
 
                         {/* Tags */}
-                        {tool.tags && tool.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mb-4">
-                            {tool.tags.slice(0, 3).map((tag, index) => (
-                              <Badge
-                                key={index}
-                                variant="secondary"
-                                className="text-xs"
-                              >
-                                {tag}
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {tool.tags?.slice(0, 3).map((tag, index) => (
+                            <Badge
+                              key={index}
+                              variant="secondary"
+                              className="text-xs bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
 
-                      {/* Action buttons */}
                       <div className="p-6 pt-0">
-                        <div className="flex gap-3">
-                          <button className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-colors text-sm font-medium">
-                            Learn More
-                          </button>
-                          <a
-                            href={tool.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-center text-sm font-medium flex items-center justify-center gap-1"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                            Visit Site
-                          </a>
-                        </div>
+                        <a
+                          href={tool.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white px-4 py-2 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 font-medium"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                          Try Tool
+                        </a>
                       </div>
                     </div>
                   ))}
             </div>
           )}
         </section>
-
-        {/* Footer Note */}
-        {!loading && trendingTopics.length > 0 && (
-          <div className="text-center mt-12 pt-8 border-t border-gray-200 dark:border-gray-700">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Topics are updated based on trending discussions from GitHub,
-              Reddit, Hacker News, and industry reports.
-            </p>
-          </div>
-        )}
       </main>
-
-      {/* Bottom Navigation */}
       <BottomNavigation currentPage="learn" />
+      <DebugTopicFiltering isVisible={true} />
     </div>
   );
 };

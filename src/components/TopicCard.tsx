@@ -28,6 +28,22 @@ interface TopicCardProps {
   fallbackImage?: string;
 }
 
+const fallbackImages: Record<string, string> = {
+  cybersecurity: "/fallbacks/cybersecurity.png",
+  "data science": "/fallbacks/data-science.png",
+  "machine learning": "/fallbacks/machine-learning.png",
+  programming: "/fallbacks/programming.png",
+  blockchain: "/fallbacks/blockchain.png",
+  "quantum computing": "/fallbacks/quantum.png",
+  default: "/placeholder.svg",
+};
+
+function getFallbackImage(category: string | undefined) {
+  if (!category) return fallbackImages.default;
+  const key = category.toLowerCase();
+  return fallbackImages[key] || fallbackImages.default;
+}
+
 const TopicCard: React.FC<TopicCardProps> = ({
   title,
   imageUrl,
