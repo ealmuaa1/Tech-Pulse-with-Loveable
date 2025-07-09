@@ -13,6 +13,8 @@ import BadgeShowcase from "@/components/home/BadgeShowcase";
 import UnlockedTools from "@/components/home/UnlockedTools";
 import MicroContentGrid from "@/components/home/MicroContentGrid";
 import TodaysTopDigests from "@/components/home/TodaysTopDigests";
+import TechDigestSection from "../components/home/TechDigestSection";
+import { DebugTopicFiltering } from "@/components/DebugTopicFiltering";
 
 // Import utilities
 import {
@@ -210,6 +212,11 @@ const HomePage: React.FC = () => {
           <TodaysTopDigests maxDisplay={4} />
         </div>
 
+        {/* What's Happening in Tech Today - Full Width */}
+        <div className="mb-8">
+          <TechDigestSection />
+        </div>
+
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Continue Quest Card */}
@@ -293,6 +300,9 @@ const HomePage: React.FC = () => {
 
       {/* Bottom Navigation */}
       <BottomNavigation currentPage="home" />
+      
+      {/* Debug Component - Remove in production */}
+      <DebugTopicFiltering isVisible={true} />
     </div>
   );
 };

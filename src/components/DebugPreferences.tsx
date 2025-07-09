@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useAuth } from "@/contexts/AuthProvider";
+import { useUser } from "@supabase/auth-helpers-react";
 import { supabase } from "@/lib/supabase";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { RefreshCw, Database, User, Settings } from "lucide-react";
  * Shows current state and provides buttons to test save/load operations
  */
 const DebugPreferences = () => {
-  const { user } = useAuth();
+  const user = useUser();
   const [directDbData, setDirectDbData] = useState<any>(null);
   const [testTopics, setTestTopics] = useState<string[]>(["AI", "Blockchain"]);
   const [loading, setLoading] = useState(false);
@@ -24,7 +24,7 @@ const DebugPreferences = () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", user.id)
+        .eq("id", user?.id)
         .single();
 
       if (error) {
@@ -87,7 +87,7 @@ const DebugPreferences = () => {
           <span className="text-sm font-medium">User ID:</span>
         </div>
         <code className="text-xs text-gray-600 dark:text-gray-300">
-          {user.id}
+          {user?.id}
         </code>
       </div>
 

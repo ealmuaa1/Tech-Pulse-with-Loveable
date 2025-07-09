@@ -1,6 +1,6 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthProvider";
+import { useUser } from "@supabase/auth-helpers-react";
 import { Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
@@ -12,8 +12,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   fallback,
 }) => {
-  const { user, loading } = useAuth();
+  const user = useUser();
   const location = useLocation();
+  
+  // Supabase useUser doesn't provide loading state, so we'll check if user is null
+  const loading = user === null;
 
   // Show loading spinner while checking authentication
   if (loading) {
