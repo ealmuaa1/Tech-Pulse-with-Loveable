@@ -45,29 +45,11 @@ export const DebugTopicFiltering: React.FC<DebugTopicFilteringProps> = ({
     }
   };
 
-  // Fetch user preferences from the correct table with real-time updates
+  // One-time fetch of user preferences on component mount
   useEffect(() => {
     if (!user?.id) return;
     fetchPreferences();
-    let subscription;
-    const setupRealtime = async () => {
-      subscription = supabase
-        .channel('debug-preferences-changes')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'preferences',
-            filter: `user_id=eq.${user.id}`
-          },
-          fetchPreferences
-        )
-        .subscribe();
-    };
-    setupRealtime();
-    return () => { if (subscription) subscription.unsubscribe(); };
-  }, [user?.id]);
+  }, [user?.id]); // Fetch when user changes
 
   // Fetch topics
   useEffect(() => {

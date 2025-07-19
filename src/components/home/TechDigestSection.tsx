@@ -5,7 +5,14 @@ import axios from "axios";
 import { usePersonalizedNews } from "@/hooks/useEnhancedContent";
 import { useFeatureFlag } from "@/hooks/useEnhancedContent";
 import { TopicMatcher } from "@/lib/topicExtraction";
-import { Heart } from "lucide-react";
+import { Heart, TrendingUp, Zap } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  getReliableImageUrl,
+  getSafeImageUrl,
+  handleImageError,
+} from "@/lib/imageService";
+import NewsCard from "@/components/NewsCard";
 
 // TODO: Replace with real profile context or Supabase fetch
 const MOCK_FAVORITE_TOPICS = ["ai", "cybersecurity", "machine learning"];
@@ -54,7 +61,7 @@ const topicImageMap = {
     "https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=800&q=80",
   // ...add more as needed
 };
-const fallbackImage = "/fallback.jpg";
+const fallbackImage = "/placeholder.svg";
 
 const UNSPLASH_ACCESS_KEY = import.meta.env.VITE_UNSPLASH_KEY;
 const PIXABAY_KEY = import.meta.env.VITE_PIXABAY_KEY;
@@ -121,62 +128,38 @@ const getCleanSourceName = (source) => {
   return sourceMapping[source.toLowerCase()] || source;
 };
 
-type DigestCardProps = {
-  title: string;
-  topic: string;
-  source: string;
+// Helper function to generate takeaways from summary
+const generateTakeaways = (summary: string): string[] => {
+  if (!summary) return [];
+
+  // Split summary into sentences
+  const sentences = summary.split(/[.!?]+/).filter((s) => s.trim().length > 10);
+
+  // Extract key points (first 3 meaningful sentences)
+  const takeaways = sentences
+    .slice(0, 3)
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence.length > 20)
+    .map((sentence) => {
+      // Clean up the sentence
+      return sentence
+        .replace(/^[^a-zA-Z]*/, "") // Remove leading non-letters
+        .replace(/[^a-zA-Z0-9\s.,!?-]*$/, "") // Remove trailing non-letters
+        .trim();
+    });
+
+  return takeaways.slice(0, 3);
 };
 
-const DigestCard = ({ title, topic, source }: DigestCardProps) => {
-  const [imageUrl, setImageUrl] = useState(fallbackImage);
+// Helper function to extract URL from source or generate one
+const extractUrl = (source: string, title: string): string => {
+  if (source && source.startsWith("http")) {
+    return source;
+  }
 
-  useEffect(() => {
-    const fetchImage = async () => {
-      try {
-        const res = await fetch(
-          `https://api.unsplash.com/photos/random?query=${encodeURIComponent(
-            topic || title
-          )}&orientation=landscape&client_id=${
-            import.meta.env.VITE_UNSPLASH_KEY
-          }`
-        );
-        const data = await res.json();
-        if (data.urls?.regular) {
-          setImageUrl(data.urls.regular);
-        }
-      } catch {
-        // fallback already set
-      }
-    };
-    fetchImage();
-  }, [topic, title]);
-
-  return (
-    <div className="relative rounded-xl overflow-hidden shadow-md bg-white dark:bg-zinc-900 transform transition-transform duration-300 hover:scale-105 group h-[250px] w-[300px] hover:shadow-lg hover:ring-2 ring-white/20">
-      <img
-        src={imageUrl}
-        alt={title}
-        onError={(e) => {
-          e.currentTarget.src = "/placeholder.svg";
-        }}
-        className="absolute inset-0 w-full h-full object-cover group-hover:brightness-90 transition duration-300"
-      />
-      {/* Source Tag Top-Left */}
-      <div className="absolute top-3 left-3 bg-zinc-800 text-white text-xs px-2 py-1 rounded-md opacity-80">
-        {source}
-      </div>
-      {/* Title and Read More Button */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white p-4">
-        <div className="font-semibold text-sm line-clamp-2">{title}</div>
-        {/* Read More (on hover) */}
-        <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <button className="bg-white text-black text-xs font-medium px-3 py-1 rounded-md hover:bg-zinc-200">
-            Read More →
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  // Generate a search URL based on title
+  const searchQuery = encodeURIComponent(title);
+  return `https://www.google.com/search?q=${searchQuery}`;
 };
 
 // TechDigestSection: fetch user preferences and filter news
@@ -238,6 +221,7 @@ export default function TechDigestSection() {
         .limit(12);
       console.info("Supabase fetch:", { newsData, newsError });
       if (newsError) throw newsError;
+
       // Step 1: Add console logs
       console.log("User preferences:", preferences);
       console.log(
@@ -269,46 +253,10 @@ export default function TechDigestSection() {
     }
   }, [navigate]);
 
+  // One-time fetch on component mount - no real-time subscriptions
   React.useEffect(() => {
     fetchData();
-  }, [fetchData]);
-
-  // Supabase subscription fix
-  React.useEffect(() => {
-    let subscription;
-    const setupRealtimeUpdates = async () => {
-      try {
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
-        if (userError || !user) {
-          return;
-        }
-        subscription = supabase
-          .channel("techdigest-preferences-changes")
-          .on(
-            "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "preferences",
-              filter: `user_id=eq.${user.id}`,
-            },
-            (payload) => {
-              fetchData();
-            }
-          )
-          .subscribe();
-      } catch (err) {
-        console.error("Error setting up real-time updates:", err);
-      }
-    };
-    setupRealtimeUpdates();
-    return () => {
-      if (subscription) subscription.unsubscribe();
-    };
-  }, [fetchData]);
+  }, []); // Empty dependency array for single fetch on mount
 
   // After filtering news, fetch images for all topics
   React.useEffect(() => {
@@ -328,40 +276,123 @@ export default function TechDigestSection() {
   // Step 3: Show fallback if nothing matches
   if (!loading && !error && data.length === 0) {
     return (
-      <div className="text-gray-400 text-center py-10">
-        No news matched your selected topics today.
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <Zap className="w-6 h-6 text-blue-600" />
+            What's Happening in Tech Today
+          </h2>
+        </div>
+        <div className="text-gray-400 text-center py-10">
+          No news matched your selected topics today.
+        </div>
+      </div>
+    );
+  }
+
+  if (loading || isPersonalizing) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <Zap className="w-6 h-6 text-blue-600" />
+            What's Happening in Tech Today
+          </h2>
+          <Badge variant="secondary" className="animate-pulse">
+            {isPersonalizing ? "Personalizing..." : "Loading..."}
+          </Badge>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 8 }).map((_, index) => (
+            <div
+              key={index}
+              className="bg-gray-200 dark:bg-gray-700 rounded-xl aspect-square animate-pulse"
+            ></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <Zap className="w-6 h-6 text-blue-600" />
+            What's Happening in Tech Today
+          </h2>
+        </div>
+        <div className="text-red-500 text-center py-8">{error}</div>
       </div>
     );
   }
 
   return (
-    <section className="mb-8">
-      <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
-        📰 What’s Happening in Tech Today
-      </h2>
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <div
-              key={i}
-              className="rounded-2xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700 animate-pulse h-48"
-            />
-          ))}
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <Zap className="w-6 h-6 text-blue-600" />
+          What's Happening in Tech Today
+        </h2>
+        <div className="flex items-center gap-2">
+          {isPersonalized && shouldUsePersonalization && (
+            <Badge
+              variant="secondary"
+              className="flex items-center gap-1 bg-pink-100 dark:bg-pink-900/20 text-pink-700 dark:text-pink-300"
+            >
+              <Heart className="w-3 h-3" />
+              Personalized
+            </Badge>
+          )}
+          <Badge variant="secondary" className="flex items-center gap-1">
+            <TrendingUp className="w-3 h-3" />
+            Live
+          </Badge>
         </div>
-      ) : error ? (
-        <div className="text-red-500 text-center py-8">{error}</div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {data.map((item, index) => (
-            <DigestCard
+      </div>
+
+      {/* News Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {data.map((item, index) => (
+          <NewsCard
+            key={item.id || index}
+            id={item.id || `news-${index}`}
+            title={item.title || "No Title"}
+            topic={item.topic || item.category || "Tech"}
+            source={getCleanSourceName(item.source) || "Tech Source"}
+            summary={item.summary}
+            takeaways={item.takeaways}
+            url={item.url}
+            publishedAt={item.published_at || item.created_at}
+          />
+        ))}
+      </div>
+
+      {/* Tags Preview */}
+      <div className="flex flex-wrap gap-2 pt-2">
+        {data
+          .slice(0, 2)
+          .flatMap((item) => {
+            const tags = [];
+            if (item.topic) tags.push(item.topic);
+            if (item.category) tags.push(item.category);
+            if (item.tags && Array.isArray(item.tags)) tags.push(...item.tags);
+            return tags;
+          })
+          .slice(0, 6)
+          .map((tag, index) => (
+            <Badge
               key={index}
-              title={item.title || "No Title"}
-              topic={item.topic || item.category || "Tech"}
-              source={getCleanSourceName(item.source) || "Tech Source"}
-            />
+              variant="outline"
+              className="text-xs bg-gray-50 dark:bg-gray-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer"
+            >
+              #{tag}
+            </Badge>
           ))}
-        </div>
-      )}
-    </section>
+      </div>
+    </div>
   );
 }
