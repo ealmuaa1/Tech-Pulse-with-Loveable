@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { getSafeImageUrl, handleImageError } from "@/lib/imageService";
 import {
   BookOpen,
   Clock,
@@ -64,55 +65,16 @@ const TopicCard: React.FC<TopicCardProps> = ({
   const navigate = useNavigate();
 
   React.useEffect(() => {
-    const isValidImageUrl =
-      typeof imageUrl === "string" &&
-      imageUrl.trim() !== "" &&
-      (imageUrl.startsWith("http://") || imageUrl.startsWith("https://"));
+    // Use reliable image service with safe fallbacks
+    const safeImageUrl = getSafeImageUrl(imageUrl, fallbackImage);
+    setImgSrc(safeImageUrl);
+  }, [imageUrl, fallbackImage]);
 
-    if (isValidImageUrl) {
-      setImgSrc(imageUrl);
-    } else {
-      // Generate topic-based image from Unsplash API with better reliability
-      const getTopicImage = (topicTitle: string) => {
-        const categoryImages = {
-          AI: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=640&h=480&fit=crop&crop=center&auto=format&q=75",
-          Blockchain:
-            "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=640&h=480&fit=crop&crop=center&auto=format&q=75",
-          Cloud:
-            "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=640&h=480&fit=crop&crop=center&auto=format&q=75",
-          Security:
-            "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=640&h=480&fit=crop&crop=center&auto=format&q=75",
-          "Data Science":
-            "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=640&h=480&fit=crop&crop=center&auto=format&q=75",
-          Mobile:
-            "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=640&h=480&fit=crop&crop=center&auto=format&q=75",
-          "Web Development":
-            "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=640&h=480&fit=crop&crop=center&auto=format&q=75",
-          "Machine Learning":
-            "https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=640&h=480&fit=crop&crop=center&auto=format&q=75",
-          Python:
-            "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=640&h=480&fit=crop&crop=center&auto=format&q=75",
-          React:
-            "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=640&h=480&fit=crop&crop=center&auto=format&q=75",
-        };
-
-        // Find matching category or use title keywords
-        const category = Object.keys(categoryImages).find((key) =>
-          topicTitle.toLowerCase().includes(key.toLowerCase())
-        );
-
-        return category
-          ? categoryImages[category as keyof typeof categoryImages]
-          : "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=640&h=480&fit=crop&crop=center&auto=format&q=75"; // Default tech image
-      };
-
-      setImgSrc(getTopicImage(title || "technology"));
-    }
-  }, [imageUrl, title]);
-
-  const handleImageError = () => {
+  const onImageError = (
+    event: React.SyntheticEvent<HTMLImageElement, Event>
+  ) => {
     console.error(`Error loading image: ${imgSrc}. Switching to fallback.`);
-    setImgSrc(fallbackImage);
+    handleImageError(event, fallbackImage);
   };
 
   const handleStartQuest = () => {
@@ -175,7 +137,7 @@ const TopicCard: React.FC<TopicCardProps> = ({
           src={imgSrc}
           alt={title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-          onError={handleImageError}
+          onError={onImageError}
           loading="lazy"
         />
 

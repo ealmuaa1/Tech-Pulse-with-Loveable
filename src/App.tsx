@@ -15,6 +15,7 @@ import NotFound from "@/pages/NotFound";
 import QuestPage from "@/pages/QuestPage";
 import Dashboard from "@/pages/Dashboard";
 import Login from "@/pages/Login";
+import SummaryPage from "@/pages/SummaryPage";
 import { TrendProvider } from "@/contexts/TrendContext";
 
 /**
@@ -31,6 +32,7 @@ import { TrendProvider } from "@/contexts/TrendContext";
  * - /learn/:slug/quiz: Quiz page
  * - /quest/:slug: Quest page
  * - /dashboard: Dashboard page
+ * - /summary/:id: News summary page
  * - *: 404 Not Found page
  */
 function App() {
@@ -51,6 +53,7 @@ function App() {
             <Route path="/learn/:slug/quiz" element={<QuizPage />} />
             <Route path="/quest/:slug" element={<QuestPage />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/summary/:id" element={<SummaryPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster />

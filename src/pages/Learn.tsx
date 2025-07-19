@@ -13,6 +13,7 @@ import type { ProductHuntTool } from "@/lib/productHunt";
 import { supabase } from "@/lib/supabase";
 import { DebugTopicFiltering } from "@/components/DebugTopicFiltering";
 import { useUser } from "@supabase/auth-helpers-react";
+import { getSafeImageUrl, handleImageError } from "@/lib/imageService";
 import {
   Brain,
   TrendingUp,
@@ -206,7 +207,10 @@ const Learn = () => {
                 key={topic.id}
                 title={topic.title}
                 summary={topic.summary}
-                imageUrl={topic.image_url || topic.image || "/placeholder.svg"}
+                imageUrl={getSafeImageUrl(
+                  topic.image_url || topic.image,
+                  "/placeholder.svg"
+                )}
                 slug={topic.slug}
                 source={topic.source}
                 category={topic.category}
@@ -286,16 +290,18 @@ const Learn = () => {
                       <div className="p-6 flex-1">
                         <div className="flex items-start gap-4 mb-4">
                           <img
-                            src={
-                              tool.image ||
-                              "https://source.unsplash.com/featured/?startup,tech"
-                            }
+                            src={getSafeImageUrl(
+                              tool.image,
+                              "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=64&h=64&fit=crop&auto=format&q=80"
+                            )}
                             alt={tool.name}
                             className="w-16 h-16 rounded-lg object-cover"
-                            onError={(e) => {
-                              e.currentTarget.src =
-                                "https://source.unsplash.com/featured/?startup,tech";
-                            }}
+                            onError={(e) =>
+                              handleImageError(
+                                e,
+                                "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=64&h=64&fit=crop&auto=format&q=80"
+                              )
+                            }
                           />
                           <div className="flex-1 min-w-0">
                             <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-1 line-clamp-1">

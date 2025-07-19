@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Clock, ExternalLink, TrendingUp, Sparkles, Heart } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { TrendingUp, Sparkles, Heart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { fetchTrendingTopics } from "@/lib/topicFetcher";
 import { usePersonalizedHomeFeed } from "@/hooks/useEnhancedContent";
 import { useFeatureFlag } from "@/hooks/useEnhancedContent";
 import { TopicMatcher } from "@/lib/topicExtraction";
 import { supabase } from "@/lib/supabase";
+import NewsCard from "@/components/NewsCard";
 
 export interface TopicCard {
   id: string;
@@ -19,6 +19,8 @@ export interface TopicCard {
   image: string;
   url?: string;
   tags: string[];
+  takeaways?: string[];
+  publishedAt?: string;
 }
 
 interface TodaysTopDigestsProps {
@@ -31,7 +33,8 @@ const generateMockTopics = (): TopicCard[] => {
     {
       id: "ai-healthcare-2024",
       title: "AI Revolution in Healthcare",
-      summary: "How GPT-4 is transforming diagnosis and treatment planning.",
+      summary:
+        "The healthcare industry is experiencing a transformative shift as GPT-4 and advanced AI systems demonstrate unprecedented capabilities in medical diagnosis and treatment planning. Recent clinical trials show that AI-powered diagnostic tools are achieving 95% accuracy in preliminary assessments, significantly outperforming traditional methods while reducing diagnosis time by 60%. These systems analyze patient data, medical histories, and current symptoms to generate personalized treatment recommendations that account for individual genetic factors and medical backgrounds.\n\nHealthcare providers are increasingly adopting these AI solutions to address critical challenges including physician shortages, rising healthcare costs, and the need for more precise, personalized care. The technology enables doctors to focus on complex cases while AI handles routine assessments and preliminary screenings. Early adopters report improved patient outcomes, reduced hospital readmission rates, and enhanced efficiency in emergency departments.\n\nForward-looking insight: AI will become the standard of care within the next 3-5 years, fundamentally reshaping how healthcare is delivered and creating new opportunities for preventive medicine and early intervention strategies.",
       category: "AI Insights",
       source: "Tech News Daily",
       readTime: 4,
@@ -39,11 +42,18 @@ const generateMockTopics = (): TopicCard[] => {
       image:
         "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&h=300&fit=crop&auto=format",
       tags: ["Healthcare", "AI", "GPT-4"],
+      takeaways: [
+        "GPT-4 shows 95% accuracy in preliminary diagnoses",
+        "Reduces diagnosis time by 60% compared to traditional methods",
+        "Enables personalized treatment plans based on patient history",
+      ],
+      publishedAt: "2024-01-15T10:00:00Z",
     },
     {
       id: "quantum-computing-breakthrough",
       title: "Quantum Computing Breakthrough",
-      summary: "IBM's 1000-qubit chip and its real-world implications.",
+      summary:
+        "IBM has achieved a monumental breakthrough in quantum computing with the development of its 1000-qubit Condor chip, marking a significant milestone in the race toward practical quantum supremacy. This advancement represents a 10x improvement in qubit count while simultaneously reducing error rates through innovative error correction techniques. The Condor chip's architecture enables complex quantum algorithms that were previously impossible, opening new frontiers in cryptography, materials science, and pharmaceutical research.\n\nThe implications of this breakthrough extend far beyond computational power. Quantum computers can now simulate molecular interactions with unprecedented accuracy, accelerating drug discovery processes by years and potentially saving billions in research costs. Financial institutions are preparing for the cryptographic revolution, as current encryption standards may become vulnerable within the next 5-10 years. Meanwhile, industries ranging from logistics to climate modeling are exploring quantum solutions for previously intractable problems.\n\nForward-looking insight: Quantum computing will create a new technological paradigm within the next decade, requiring organizations to develop quantum-ready strategies and invest in quantum-resistant security protocols to maintain competitive advantage.",
       category: "Tech News Daily",
       source: "Quantum Weekly",
       readTime: 6,
@@ -51,11 +61,18 @@ const generateMockTopics = (): TopicCard[] => {
       image:
         "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400&h=300&fit=crop&auto=format",
       tags: ["Quantum", "IBM", "Computing"],
+      takeaways: [
+        "IBM's Condor chip achieves 1000+ qubits with improved error rates",
+        "Potential to break current encryption standards within 5-10 years",
+        "Accelerates drug discovery by simulating molecular interactions",
+      ],
+      publishedAt: "2024-01-14T14:30:00Z",
     },
     {
       id: "sustainable-tech-innovations",
       title: "Sustainable Tech Innovations",
-      summary: "Exploring new eco-friendly technologies for a greener future.",
+      summary:
+        "The sustainable technology sector is experiencing unprecedented innovation as companies race to develop solutions that address climate change while maintaining economic viability. Breakthrough developments include next-generation solar panels achieving 47% efficiency in laboratory conditions, representing a 60% improvement over current commercial panels. These advancements, combined with AI-optimized energy grid management systems, are enabling renewable energy to compete directly with fossil fuels on cost and reliability.\n\nBiodegradable electronics represent another major breakthrough, with new materials that decompose naturally while maintaining performance standards. This technology is reducing e-waste by 40% in pilot programs and creating new opportunities for circular economy business models. Companies are also developing carbon capture technologies that can be integrated into existing industrial processes, with some achieving 90% capture rates at competitive costs.\n\nForward-looking insight: Sustainable technology will become the default choice for businesses within the next 5 years, driven by regulatory requirements, consumer demand, and the economic advantages of reduced resource consumption and waste management costs.",
       category: "Green Tech Journal",
       source: "Sustainability Today",
       readTime: 5,
@@ -63,12 +80,18 @@ const generateMockTopics = (): TopicCard[] => {
       image:
         "https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?w=400&h=300&fit=crop&auto=format",
       tags: ["Sustainability", "Green Tech", "Innovation"],
+      takeaways: [
+        "New solar panel efficiency reaches 47% in lab conditions",
+        "Biodegradable electronics reduce e-waste by 40%",
+        "AI-optimized energy grids cut carbon emissions by 25%",
+      ],
+      publishedAt: "2024-01-13T09:15:00Z",
     },
     {
       id: "web3-development-trends",
       title: "The Future of Decentralized Social Media",
       summary:
-        "Exploring protocols like Fracaster and Lens in decentralized platforms.",
+        "Decentralized social media platforms are gaining significant traction as users seek alternatives to traditional social networks that prioritize data privacy and user ownership. Protocols like Farcaster and Lens are leading this revolution by enabling cross-platform social identities and decentralized content ownership. These platforms allow users to maintain control over their data while participating in social networks that operate on blockchain technology, fundamentally changing the power dynamics between users and platform operators.\n\nThe economic implications are profound, as content creators can now monetize their work directly through smart contracts without platform intermediaries taking significant cuts. Early data shows that user engagement on decentralized platforms is 40% higher than traditional social media, with 80% reduction in privacy-related concerns. The technology also enables new forms of social interaction, including token-gated communities and reputation-based systems that reward quality contributions.\n\nForward-looking insight: Decentralized social media will capture 15-20% of the social media market within the next 3 years, creating new opportunities for content creators and challenging the dominance of established platforms while reshaping how digital communities are built and monetized.",
       category: "Product Hunt",
       source: "Web3 Weekly",
       readTime: 7,
@@ -76,12 +99,18 @@ const generateMockTopics = (): TopicCard[] => {
       image:
         "https://images.unsplash.com/photo-1639762681057-408e52192e55?w=400&h=300&fit=crop&auto=format",
       tags: ["Web3", "Social Media", "Decentralized"],
+      takeaways: [
+        "Farcaster protocol enables cross-platform social identity",
+        "Lens Protocol decentralizes content ownership and monetization",
+        "User data ownership reduces privacy concerns by 80%",
+      ],
+      publishedAt: "2024-01-12T16:45:00Z",
     },
     {
       id: "edge-ai-mobile-apps",
       title: "Edge AI in Mobile Applications",
       summary:
-        "Running AI models directly on smartphones for better privacy and speed.",
+        "Edge AI is revolutionizing mobile applications by enabling sophisticated artificial intelligence to run directly on smartphones, eliminating the need for cloud-based processing and fundamentally changing how users interact with their devices. This technology reduces latency by 90% compared to cloud-based AI solutions while providing enhanced privacy protection by keeping sensitive data on the device. Major smartphone manufacturers are integrating dedicated AI processors that can handle complex machine learning models, enabling features like real-time language translation, advanced photography, and personalized user experiences.\n\nThe privacy implications are significant, as edge AI eliminates the need to transmit personal data to cloud servers for processing. This approach addresses growing consumer concerns about data privacy while enabling new applications that require real-time responsiveness. Battery optimization techniques have advanced to the point where AI features can run continuously without significantly impacting device performance, opening possibilities for always-on AI assistants and predictive applications.\n\nForward-looking insight: Edge AI will become the standard for mobile applications within the next 2 years, creating new opportunities for developers to build privacy-first applications while enabling previously impossible real-time AI features that will transform user experiences across all mobile platforms.",
       category: "Mobile Tech",
       source: "Mobile AI Weekly",
       readTime: 5,
@@ -89,12 +118,18 @@ const generateMockTopics = (): TopicCard[] => {
       image:
         "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&h=300&fit=crop&auto=format",
       tags: ["Edge AI", "Mobile", "Privacy"],
+      takeaways: [
+        "On-device AI processing reduces latency by 90%",
+        "Privacy-first approach eliminates cloud data transmission",
+        "Battery optimization allows 24/7 AI features",
+      ],
+      publishedAt: "2024-01-11T11:20:00Z",
     },
     {
       id: "blockchain-gaming-metaverse",
       title: "Blockchain Gaming & Metaverse",
       summary:
-        "How NFTs and blockchain are reshaping virtual worlds and gaming economies.",
+        "Blockchain technology is fundamentally transforming the gaming industry by introducing true digital asset ownership and creating new economic models that blur the lines between gaming and work. Non-fungible tokens (NFTs) enable players to own, trade, and monetize in-game assets across different platforms, creating a new paradigm of digital property rights. Play-to-earn models are generating $2.5 billion in annual revenue, with some players earning substantial incomes through gaming activities, particularly in developing markets where traditional employment opportunities may be limited.\n\nThe metaverse concept is evolving beyond virtual reality to encompass interconnected digital worlds where users can seamlessly move assets and identities between different platforms. Major gaming companies are investing heavily in blockchain infrastructure, with cross-game asset interoperability becoming a key competitive advantage. This technology also enables new forms of community governance, where players can participate in decision-making processes that affect game development and economic policies.\n\nForward-looking insight: Blockchain gaming will represent 25% of the global gaming market by 2027, creating new career opportunities in digital asset management and virtual world development while fundamentally changing how players think about digital ownership and value creation in gaming environments.",
       category: "Gaming Tech",
       source: "Metaverse Today",
       readTime: 8,
@@ -102,24 +137,17 @@ const generateMockTopics = (): TopicCard[] => {
       image:
         "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&h=300&fit=crop&auto=format",
       tags: ["Blockchain", "Gaming", "NFTs"],
+      takeaways: [
+        "NFT ownership enables true digital asset portability",
+        "Play-to-earn models generate $2.5B in annual revenue",
+        "Cross-game asset interoperability increases player engagement",
+      ],
+      publishedAt: "2024-01-10T13:00:00Z",
     },
   ];
 
   // Shuffle and return random topics
   return topics.sort(() => Math.random() - 0.5);
-};
-
-const getCategoryColor = (category: string) => {
-  const colors = {
-    "AI Insights": "bg-purple-100 text-purple-700 border-purple-200",
-    "Tech News Daily": "bg-blue-100 text-blue-700 border-blue-200",
-    "Green Tech Journal": "bg-green-100 text-green-700 border-green-200",
-    "Product Hunt": "bg-orange-100 text-orange-700 border-orange-200",
-    "Mobile Tech": "bg-pink-100 text-pink-700 border-pink-200",
-    "Gaming Tech": "bg-indigo-100 text-indigo-700 border-indigo-200",
-    default: "bg-gray-100 text-gray-700 border-gray-200",
-  };
-  return colors[category as keyof typeof colors] || colors.default;
 };
 
 const TodaysTopDigests: React.FC<TodaysTopDigestsProps> = ({
@@ -168,42 +196,8 @@ const TodaysTopDigests: React.FC<TodaysTopDigestsProps> = ({
     return () => clearInterval(interval);
   }, [maxDisplay]);
 
-  // Supabase subscription fix
-  useEffect(() => {
-    let subscription;
-    const setupRealtimeUpdates = async () => {
-      try {
-        const {
-          data: { user },
-          error: userError,
-        } = await supabase.auth.getUser();
-        if (userError || !user) {
-          return;
-        }
-        subscription = supabase
-          .channel("home-preferences-changes")
-          .on(
-            "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "preferences",
-              filter: `user_id=eq.${user.id}`,
-            },
-            (payload) => {
-              setOriginalTopics([...originalTopics]);
-            }
-          )
-          .subscribe();
-      } catch (err) {
-        console.error("Error setting up real-time updates:", err);
-      }
-    };
-    setupRealtimeUpdates();
-    return () => {
-      if (subscription) subscription.unsubscribe();
-    };
-  }, [originalTopics]);
+  // One-time fetch on component mount - no real-time subscriptions
+  // Topics are fetched once and filtered based on user preferences
 
   if (isLoading || isPersonalizing) {
     return (
@@ -258,71 +252,18 @@ const TodaysTopDigests: React.FC<TodaysTopDigestsProps> = ({
       {/* Topic Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {topics.map((topic) => (
-          <div
+          <NewsCard
             key={topic.id}
-            className="group relative bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] cursor-pointer overflow-hidden border border-gray-200 dark:border-gray-700"
-          >
-            {/* Image */}
-            <div className="relative aspect-square overflow-hidden">
-              <img
-                src={topic.image}
-                alt={topic.title}
-                onError={(e) => {
-                  e.currentTarget.src = "/placeholder.svg";
-                }}
-                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
-
-              {/* Category Badge */}
-              <div className="absolute top-3 left-3">
-                <Badge
-                  className={`text-xs ${getCategoryColor(
-                    topic.category
-                  )} backdrop-blur-sm`}
-                >
-                  {topic.category}
-                </Badge>
-              </div>
-
-              {/* Trending Score */}
-              <div className="absolute top-3 right-3">
-                <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
-                  <TrendingUp className="w-3 h-3 text-green-600" />
-                  <span className="text-xs font-medium text-gray-900 dark:text-white">
-                    {topic.trending_score}
-                  </span>
-                </div>
-              </div>
-
-              {/* Content Overlay */}
-              <div className="absolute bottom-0 left-0 right-0 p-4">
-                <h3 className="text-white font-bold text-sm mb-2 line-clamp-2 leading-tight">
-                  {topic.title}
-                </h3>
-
-                <div className="flex items-center justify-between text-white/80 text-xs">
-                  <div className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    <span>{topic.readTime}m read</span>
-                  </div>
-                  <span>{topic.source}</span>
-                </div>
-              </div>
-
-              {/* Hover Action */}
-              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                <Button
-                  size="sm"
-                  className="bg-white/90 text-gray-900 hover:bg-white border-none shadow-lg"
-                >
-                  <ExternalLink className="w-3 h-3 mr-1" />
-                  Read More
-                </Button>
-              </div>
-            </div>
-          </div>
+            id={topic.id}
+            title={topic.title}
+            topic={topic.category}
+            source={topic.source}
+            summary={topic.summary}
+            takeaways={topic.takeaways}
+            imageUrl={topic.image}
+            url={topic.url}
+            publishedAt={topic.publishedAt}
+          />
         ))}
       </div>
 
