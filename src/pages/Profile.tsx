@@ -27,6 +27,7 @@ import { useNavigate } from "react-router-dom";
 import TopicSelector from "@/components/TopicSelector";
 import { supabase } from "@/lib/supabase";
 import { useUser } from "@supabase/auth-helpers-react";
+import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useToast } from "@/components/ui/use-toast";
 import BottomNavigation from "@/components/BottomNavigation";
 
@@ -107,6 +108,7 @@ const Profile: React.FC = () => {
 
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { isPro, planName } = useSubscription();
   const [favoriteTopics, setFavoriteTopics] = useState<string[]>([]);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -284,7 +286,7 @@ const Profile: React.FC = () => {
           </div>
         </div>
 
-        <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+        <div className="max-w-6xl mx-auto px-6 py-8 pb-24 space-y-8">
           {/* User Info */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -300,14 +302,24 @@ const Profile: React.FC = () => {
                 <UserIcon className="w-12 h-12 text-white" />
               </motion.div>
               <div>
-                <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">
-                  {user?.user_metadata?.full_name || "Guest User"}
-                </h2>
+                <div className="flex items-center gap-3 mb-2">
+                  <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300">
+                    {user?.user_metadata?.full_name || "Guest User"}
+                  </h2>
+                  {isPro && (
+                    <Badge className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-3 py-1 text-sm font-semibold">
+                      ✨ Pro User
+                    </Badge>
+                  )}
+                </div>
                 {user && (
                   <p className="text-gray-500 dark:text-gray-400 text-sm">
                     {user.email}
                   </p>
                 )}
+                <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
+                  Current Plan: <span className="font-semibold">{planName}</span>
+                </p>
               </div>
             </div>
           </motion.div>
@@ -579,6 +591,27 @@ const Profile: React.FC = () => {
                 <span>Privacy Settings</span>
                 <Shield className="w-5 h-5 text-gray-500" />
               </Button>
+
+              {/* Subscription Management */}
+              {isPro ? (
+                <Button
+                  variant="ghost"
+                  className="w-full flex justify-between items-center px-4 py-3 rounded-lg text-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  onClick={() => navigate('/pricing')}
+                >
+                  <span>Manage Subscription</span>
+                  <Badge className="bg-green-500 text-white text-xs">Active</Badge>
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  className="w-full flex justify-between items-center px-4 py-3 rounded-lg text-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  onClick={() => navigate('/pricing')}
+                >
+                  <span>Upgrade to Pro</span>
+                  <Badge className="bg-purple-500 text-white text-xs">$7/month</Badge>
+                </Button>
+              )}
 
               {/* Help & Support */}
               <Button

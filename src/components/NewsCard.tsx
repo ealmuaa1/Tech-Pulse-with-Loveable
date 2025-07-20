@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { BookOpen, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
+import { BookOpen, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   getReliableImageUrl,
@@ -33,7 +33,6 @@ const NewsCard: React.FC<NewsCardProps> = ({
   isAlwaysExpanded = false,
 }) => {
   const [cardImageUrl, setCardImageUrl] = useState("/placeholder.svg");
-  const [isOpen, setIsOpen] = useState(isAlwaysExpanded);
   const navigate = useNavigate();
 
   // Debug logging for SummaryPage
@@ -43,12 +42,11 @@ const NewsCard: React.FC<NewsCardProps> = ({
         title,
         hasUrl: !!url,
         url,
-        isOpen,
         hasSummary: !!summary,
         hasTakeaways: takeaways.length > 0,
       });
     }
-  }, [isAlwaysExpanded, title, url, isOpen, summary, takeaways]);
+  }, [isAlwaysExpanded, title, url, summary, takeaways]);
 
   // Fetch image for the topic
   useEffect(() => {
@@ -67,10 +65,6 @@ const NewsCard: React.FC<NewsCardProps> = ({
     if (id) {
       navigate(`/summary/${id}`);
     }
-  };
-
-  const handleToggle = () => {
-    setIsOpen(!isOpen);
   };
 
   const formatDate = (dateString?: string) => {
@@ -142,29 +136,9 @@ const NewsCard: React.FC<NewsCardProps> = ({
           </span>
         </div>
 
-        {/* Summary Toggle Button */}
-        {!isAlwaysExpanded && (summary || takeaways.length > 0) && (
-          <button
-            onClick={handleToggle}
-            className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium text-sm transition-colors duration-200"
-          >
-            {isOpen ? (
-              <>
-                <ChevronUp className="w-4 h-4" />
-                Hide Summary
-              </>
-            ) : (
-              <>
-                <ChevronDown className="w-4 h-4" />
-                {takeaways.length > 0 ? "View Key Points" : "Read Summary"}
-              </>
-            )}
-          </button>
-        )}
-
-        {/* Expandable Summary Section */}
-        {isOpen && (
-          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 transition-all duration-200">
+        {/* Always Show Summary Content for SummaryPage */}
+        {isAlwaysExpanded && (summary || takeaways.length > 0) && (
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
             {/* Summary */}
             {summary && (
               <div className="mb-4">

@@ -8,8 +8,22 @@ const app = express();
 const PORT = 4000;
 
 // Middleware
-app.use(cors({ origin: "http://localhost:3000" }));
+const allowedOrigins = [
+  process.env.CLIENT_URL || "http://localhost:3000",
+  process.env.VITE_CLIENT_URL || "http://localhost:5173",
+  "http://localhost:3000",
+  "http://localhost:5173"
+].filter(Boolean);
+
+app.use(cors({ 
+  origin: allowedOrigins,
+  credentials: true 
+}));
 app.use(express.json());
+
+// Import checkout routes
+const checkoutRoutes = require("./api/checkout");
+app.use("/api", checkoutRoutes);
 
 // Helper: Deduplicate by title
 function dedupeByTitle(arr) {

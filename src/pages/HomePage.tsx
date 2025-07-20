@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2, Settings, Moon, Sun, Palette } from "lucide-react";
+import { useSubscription } from "@/contexts/SubscriptionContext";
+import { Loader2, Settings, Moon, Sun, Palette, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import BottomNavigation from "@/components/BottomNavigation";
@@ -14,7 +15,6 @@ import UnlockedTools from "@/components/home/UnlockedTools";
 import MicroContentGrid from "@/components/home/MicroContentGrid";
 import TodaysTopDigests from "@/components/home/TodaysTopDigests";
 import TechDigestSection from "../components/home/TechDigestSection";
-import { DebugTopicFiltering } from "@/components/DebugTopicFiltering";
 
 // Import utilities
 import {
@@ -44,6 +44,7 @@ import { gradients } from "@/styles/gradients";
  */
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  const { isPro } = useSubscription();
   // const { user } = useAuth(); // Uncomment when auth context is available
 
   // State management
@@ -257,6 +258,53 @@ const HomePage: React.FC = () => {
           <MicroContentGrid maxDisplay={4} refreshInterval={30000} />
         </div>
 
+        {/* Pro Upgrade CTA - Only show for free users */}
+        {!isPro && (
+          <div className="mb-8">
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-8 text-white shadow-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Crown className="w-8 h-8 text-yellow-300" />
+                    <h3 className="text-2xl font-bold">Unlock Pro Features</h3>
+                  </div>
+                  <p className="text-purple-100 mb-6 text-lg">
+                    Get unlimited access to all learning modules, AI tools, and
+                    premium content.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                      <span className="text-purple-100">
+                        Unlimited summaries
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                      <span className="text-purple-100">Advanced AI tools</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                      <span className="text-purple-100">Priority support</span>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => navigate("/pricing")}
+                    className="bg-white text-purple-600 hover:bg-purple-50 font-semibold px-8 py-3"
+                  >
+                    Upgrade to Pro - $7/month
+                  </Button>
+                </div>
+                <div className="hidden md:block">
+                  <div className="w-32 h-32 bg-white/10 rounded-full flex items-center justify-center">
+                    <Crown className="w-16 h-16 text-yellow-300" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Quick Stats Banner */}
         <div
           className={`${gradients.purpleCard} rounded-xl p-6 border border-purple-200/50`}
@@ -300,9 +348,8 @@ const HomePage: React.FC = () => {
 
       {/* Bottom Navigation */}
       <BottomNavigation currentPage="home" />
-      
-      {/* Debug Component - Remove in production */}
-      <DebugTopicFiltering isVisible={true} />
+
+
     </div>
   );
 };
