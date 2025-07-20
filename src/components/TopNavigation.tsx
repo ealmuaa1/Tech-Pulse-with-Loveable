@@ -31,30 +31,42 @@ const TopNavigation = () => {
             </span>
           </Link>
 
-          {/* Breadcrumb - Hidden on mobile */}
-          <div className="hidden md:flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+          {/* Navigation Links */}
+          <div className="hidden md:flex items-center gap-6 text-sm text-gray-600 dark:text-gray-400">
             <Link
               to="/"
               className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
             >
               Home
             </Link>
-            {pathSegments.map((segment, index) => (
-              <div key={segment} className="flex items-center gap-2">
-                <ChevronRight className="w-4 h-4" />
-                <span className="capitalize">
-                  {segment === "profile"
-                    ? "Profile"
-                    : segment === "learn"
-                    ? "Learn"
-                    : segment === "ideas"
-                    ? "Ideas"
-                    : segment === "explore"
-                    ? "Explore"
-                    : segment}
-                </span>
-              </div>
-            ))}
+            <Link
+              to="/pricing"
+              className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+            >
+              Pricing
+            </Link>
+            
+            {/* Breadcrumb */}
+            <div className="flex items-center gap-2">
+              {pathSegments.map((segment, index) => (
+                <div key={segment} className="flex items-center gap-2">
+                  <ChevronRight className="w-4 h-4" />
+                  <span className="capitalize">
+                    {segment === "profile"
+                      ? "Profile"
+                      : segment === "learn"
+                      ? "Learn"
+                      : segment === "ideas"
+                      ? "Ideas"
+                      : segment === "explore"
+                      ? "Explore"
+                      : segment === "pricing"
+                      ? "Pricing"
+                      : segment}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

@@ -21,117 +21,25 @@ import {
   Briefcase,
   Rocket,
   Brain,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { passionSections, PassionCard } from "@/data/passionSections";
 
-// Mock data for passion sections
-const passionSections = {
-  "Professional Growth": [
-    {
-      id: "pg-1",
-      title: "Tech Leadership & Management",
-      description: "Lead engineering teams and drive technical strategy",
-      questCount: 8,
-      toolCount: 5,
-      badges: ["Executive", "Advanced"],
-      category: "Professional Growth",
-      gradient: "from-slate-500 to-slate-700",
-      icon: <Target className="w-6 h-6" />,
-    },
-    {
-      id: "pg-2",
-      title: "Product Management for Tech",
-      description: "Bridge technology and business with product thinking",
-      questCount: 10,
-      toolCount: 7,
-      badges: ["Strategic", "Intermediate"],
-      category: "Professional Growth",
-      gradient: "from-indigo-500 to-indigo-700",
-      icon: <Briefcase className="w-6 h-6" />,
-    },
-    {
-      id: "pg-3",
-      title: "Technical Mentorship",
-      description: "Guide and mentor junior engineers for team growth",
-      questCount: 5,
-      toolCount: 3,
-      badges: ["Mentor", "Growth"],
-      category: "Professional Growth",
-      gradient: "from-gray-500 to-gray-700",
-      icon: <Users className="w-6 h-6" />,
-    },
-  ],
-  "Startup & Tech Ideas": [
-    {
-      id: "st-1",
-      title: "MVP Development & Launch",
-      description: "Turn your ideas into successful tech products",
-      questCount: 6,
-      toolCount: 9,
-      badges: ["Entrepreneurial", "Practical"],
-      category: "Startup & Tech Ideas",
-      gradient: "from-rose-400 to-rose-700",
-      icon: <Rocket className="w-6 h-6" />,
-    },
-    {
-      id: "st-2",
-      title: "Tech Startup Ecosystem",
-      description: "Navigate funding, scaling, and market validation",
-      questCount: 7,
-      toolCount: 4,
-      badges: ["Business", "Advanced"],
-      category: "Startup & Tech Ideas",
-      gradient: "from-pink-400 to-pink-700",
-      icon: <TrendingUp className="w-6 h-6" />,
-    },
-    {
-      id: "st-3",
-      title: "Pitch Deck Mastery",
-      description: "Craft compelling pitch decks for investors",
-      questCount: 3,
-      toolCount: 2,
-      badges: ["Pitch", "Presentation"],
-      category: "Startup & Tech Ideas",
-      gradient: "from-yellow-400 to-yellow-700",
-      icon: <Star className="w-6 h-6" />,
-    },
-  ],
-  "Personal Productivity": [
-    {
-      id: "pp-1",
-      title: "AI-Powered Productivity",
-      description: "Leverage AI tools to 10x your personal efficiency",
-      questCount: 5,
-      toolCount: 15,
-      badges: ["Life Changing", "Beginner"],
-      category: "Personal Productivity",
-      gradient: "from-emerald-400 to-emerald-700",
-      icon: <Lightbulb className="w-6 h-6" />,
-    },
-    {
-      id: "pp-2",
-      title: "Remote Work Mastery",
-      description: "Excel in distributed teams and async collaboration",
-      questCount: 4,
-      toolCount: 8,
-      badges: ["Essential", "Intermediate"],
-      category: "Personal Productivity",
-      gradient: "from-violet-400 to-violet-700",
-      icon: <Users className="w-6 h-6" />,
-    },
-    {
-      id: "pp-3",
-      title: "Focus & Deep Work",
-      description: "Master deep work and focus techniques for productivity",
-      questCount: 2,
-      toolCount: 4,
-      badges: ["Focus", "Discipline"],
-      category: "Personal Productivity",
-      gradient: "from-blue-400 to-blue-700",
-      icon: <Clock className="w-6 h-6" />,
-    },
-  ],
+// Icon mapping for dynamic icon rendering
+const iconMap: Record<string, React.ReactNode> = {
+  Target: <Target className="w-6 h-6" />,
+  Briefcase: <Briefcase className="w-6 h-6" />,
+  Users: <Users className="w-6 h-6" />,
+  Rocket: <Rocket className="w-6 h-6" />,
+  TrendingUp: <TrendingUp className="w-6 h-6" />,
+  Star: <Star className="w-6 h-6" />,
+  Lightbulb: <Lightbulb className="w-6 h-6" />,
+  Brain: <Brain className="w-6 h-6" />,
+  Clock: <Clock className="w-6 h-6" />,
 };
 
 // Mock recommended cards
@@ -298,6 +206,7 @@ const mockPowerTips = [
 const ExplorePage = () => {
   const navigate = useNavigate();
   const [currentTipIndex, setCurrentTipIndex] = useState(0);
+  const [expandedCardId, setExpandedCardId] = useState<string | null>(null);
 
   // Carousel navigation for power tips
   const nextTip = () => {
@@ -395,19 +304,27 @@ const ExplorePage = () => {
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {cards.slice(0, 3).map((card) => (
+              {cards.map((card) => (
                 <Card
                   key={card.id}
                   className="bg-gradient-to-br from-white via-slate-50 to-slate-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 rounded-2xl shadow-md hover:shadow-xl border border-slate-200 dark:border-gray-700 p-6 flex flex-col items-center transition-all duration-300 group"
                 >
                   <div className="w-14 h-14 rounded-full bg-slate-100 dark:bg-gray-800 flex items-center justify-center mb-3 shadow-sm">
                     <span className="text-indigo-500 dark:text-indigo-400 text-2xl">
-                      {card.icon}
+                      {iconMap[card.icon] || <Target className="w-6 h-6" />}
                     </span>
                   </div>
                   <CardTitle className="text-xl font-bold text-center mb-2 group-hover:text-indigo-600 transition-colors">
                     {card.title}
                   </CardTitle>
+
+                  {/* Special subheading for AI-Powered Productivity */}
+                  {card.isSpecial && card.subheading && (
+                    <p className="text-gray-600 dark:text-gray-300 text-center mb-3 text-sm font-medium italic">
+                      {card.subheading}
+                    </p>
+                  )}
+
                   <p className="text-gray-500 dark:text-gray-400 text-center mb-4 text-sm leading-relaxed line-clamp-2">
                     {card.description}
                   </p>
@@ -431,6 +348,252 @@ const ExplorePage = () => {
                       </span>
                     ))}
                   </div>
+
+                  {/* Special collapsible section for enhanced cards */}
+                  {card.isSpecial && (
+                    <div className="w-full mb-4">
+                      <Button
+                        onClick={() =>
+                          setExpandedCardId(
+                            expandedCardId === card.id ? null : card.id
+                          )
+                        }
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-xs border-dashed border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      >
+                        {expandedCardId === card.id ? (
+                          <>
+                            <ChevronUp className="w-3 h-3 mr-1" />
+                            Hide Resources
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="w-3 h-3 mr-1" />
+                            Show Resources
+                          </>
+                        )}
+                      </Button>
+
+                      {expandedCardId === card.id && (
+                        <div
+                          className={`mt-3 p-4 rounded-lg border ${
+                            card.id === "pp-1"
+                              ? "bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-emerald-200 dark:border-emerald-700/50"
+                              : card.id === "pp-2"
+                              ? "bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 border-violet-200 dark:border-violet-700/50"
+                              : card.id === "pp-3"
+                              ? "bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-700/50"
+                              : card.id === "st-4"
+                              ? "bg-gradient-to-br from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20 border-orange-200 dark:border-orange-700/50"
+                              : "bg-gradient-to-br from-cyan-50 to-blue-50 dark:from-cyan-900/20 dark:to-blue-900/20 border-cyan-200 dark:border-cyan-700/50"
+                          }`}
+                        >
+                          <ul className="space-y-4">
+                            {/* Daily Challenge */}
+                            <li className="flex items-start gap-3">
+                              <div
+                                className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                                  card.id === "pp-1"
+                                    ? "bg-emerald-500"
+                                    : card.id === "pp-2"
+                                    ? "bg-violet-500"
+                                    : card.id === "pp-3"
+                                    ? "bg-blue-500"
+                                    : card.id === "st-4"
+                                    ? "bg-orange-500"
+                                    : "bg-cyan-500"
+                                }`}
+                              >
+                                <span className="text-white text-xs font-bold">
+                                  1
+                                </span>
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-base font-semibold text-gray-900 dark:text-white mb-2">
+                                  Daily 1-Minute Challenge
+                                </p>
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                                  {card.resources?.dailyChallenge.description ||
+                                    "Complete today's challenge to boost your skills."}
+                                </p>
+                                <div className="space-y-1">
+                                  <a
+                                    href={
+                                      card.resources?.dailyChallenge.tool.url ||
+                                      "#"
+                                    }
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`inline-flex items-center gap-1 text-sm transition-colors ${
+                                      card.id === "pp-1"
+                                        ? "text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300"
+                                        : card.id === "pp-2"
+                                        ? "text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300"
+                                        : card.id === "pp-3"
+                                        ? "text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                                        : card.id === "st-4"
+                                        ? "text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300"
+                                        : "text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300"
+                                    }`}
+                                  >
+                                    <ExternalLink className="w-3 h-3" />
+                                    {card.resources?.dailyChallenge.tool.name ||
+                                      "Tool"}
+                                  </a>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 ml-4">
+                                    {
+                                      card.resources?.dailyChallenge.tool
+                                        .description
+                                    }{" "}
+                                    (
+                                    {
+                                      card.resources?.dailyChallenge.tool
+                                        .pricing
+                                    }
+                                    )
+                                  </p>
+                                </div>
+                              </div>
+                            </li>
+
+                            {/* Tool of the Week */}
+                            <li className="flex items-start gap-3">
+                              <div
+                                className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                                  card.id === "pp-1"
+                                    ? "bg-blue-500"
+                                    : card.id === "pp-2"
+                                    ? "bg-purple-500"
+                                    : card.id === "pp-3"
+                                    ? "bg-indigo-500"
+                                    : card.id === "st-4"
+                                    ? "bg-red-500"
+                                    : "bg-blue-500"
+                                }`}
+                              >
+                                <span className="text-white text-xs font-bold">
+                                  2
+                                </span>
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-base font-semibold text-gray-900 dark:text-white mb-2">
+                                  Tool of the Week
+                                </p>
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                                  {card.resources?.toolOfTheWeek.description ||
+                                    "Try this week's featured tool to enhance your workflow."}
+                                </p>
+                                <div className="space-y-1">
+                                  <a
+                                    href={
+                                      card.resources?.toolOfTheWeek.tool.url ||
+                                      "#"
+                                    }
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`inline-flex items-center gap-1 text-sm transition-colors ${
+                                      card.id === "pp-1"
+                                        ? "text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300"
+                                        : card.id === "pp-2"
+                                        ? "text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300"
+                                        : card.id === "pp-3"
+                                        ? "text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                                        : card.id === "st-4"
+                                        ? "text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300"
+                                        : "text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300"
+                                    }`}
+                                  >
+                                    <ExternalLink className="w-3 h-3" />
+                                    {card.resources?.toolOfTheWeek.tool.name ||
+                                      "Tool"}
+                                  </a>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 ml-4">
+                                    {
+                                      card.resources?.toolOfTheWeek.tool
+                                        .description
+                                    }{" "}
+                                    (
+                                    {card.resources?.toolOfTheWeek.tool.pricing}
+                                    )
+                                  </p>
+                                </div>
+                              </div>
+                            </li>
+
+                            {/* Learn More Resources */}
+                            <li className="flex items-start gap-3">
+                              <div
+                                className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                                  card.id === "pp-1"
+                                    ? "bg-purple-500"
+                                    : card.id === "pp-2"
+                                    ? "bg-indigo-500"
+                                    : card.id === "pp-3"
+                                    ? "bg-cyan-500"
+                                    : card.id === "st-4"
+                                    ? "bg-yellow-500"
+                                    : "bg-teal-500"
+                                }`}
+                              >
+                                <span className="text-white text-xs font-bold">
+                                  3
+                                </span>
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-base font-semibold text-gray-900 dark:text-white mb-2">
+                                  Learn More Resources
+                                </p>
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                                  {card.resources?.learnMoreResources
+                                    .description ||
+                                    "Explore additional resources to deepen your knowledge."}
+                                </p>
+                                <div className="space-y-1">
+                                  <a
+                                    href={
+                                      card.resources?.learnMoreResources.tool
+                                        .url || "#"
+                                    }
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className={`inline-flex items-center gap-1 text-sm transition-colors ${
+                                      card.id === "pp-1"
+                                        ? "text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300"
+                                        : card.id === "pp-2"
+                                        ? "text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:hover:text-violet-300"
+                                        : card.id === "pp-3"
+                                        ? "text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                                        : card.id === "st-4"
+                                        ? "text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300"
+                                        : "text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300"
+                                    }`}
+                                  >
+                                    <ExternalLink className="w-3 h-3" />
+                                    {card.resources?.learnMoreResources.tool
+                                      .name || "Resource"}
+                                  </a>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 ml-4">
+                                    {
+                                      card.resources?.learnMoreResources.tool
+                                        .description
+                                    }{" "}
+                                    (
+                                    {
+                                      card.resources?.learnMoreResources.tool
+                                        .pricing
+                                    }
+                                    )
+                                  </p>
+                                </div>
+                              </div>
+                            </li>
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <Button
                     onClick={() => handleExploreClick(card.id, card.category)}
                     className="w-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white shadow-md py-2 mt-auto"

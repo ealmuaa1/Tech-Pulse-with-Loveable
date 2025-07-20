@@ -11,7 +11,7 @@ import { Topic } from "@/lib/topicService";
 import { useProductHuntTools } from "@/hooks/useProductHuntTools";
 import type { ProductHuntTool } from "@/lib/productHunt";
 import { supabase } from "@/lib/supabase";
-import { DebugTopicFiltering } from "@/components/DebugTopicFiltering";
+
 import { useUser } from "@supabase/auth-helpers-react";
 import { getSafeImageUrl, handleImageError } from "@/lib/imageService";
 import {
@@ -350,7 +350,6 @@ const Learn = () => {
         </section>
       </main>
       <BottomNavigation currentPage="learn" />
-      <DebugTopicFiltering isVisible={true} />
     </div>
   );
 };

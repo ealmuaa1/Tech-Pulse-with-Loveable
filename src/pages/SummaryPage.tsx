@@ -82,11 +82,43 @@ const SummaryPage: React.FC = () => {
         setError(null);
 
         // Try to fetch from Supabase first
-        const { data, error: supabaseError } = await supabase
+        let { data, error: supabaseError } = await supabase
           .from("daily_summaries")
           .select("*")
           .eq("id", id)
           .single();
+
+        // If the specific ID doesn't exist, try with a fallback ID
+        if (!data && supabaseError) {
+          console.warn("News item not found with ID:", id, supabaseError);
+
+          // Try with a known existing topic ID as fallback
+          const fallbackIds = [
+            "ai-fundamentals",
+            "tech-trends-core",
+            "blockchain-basics",
+          ];
+
+          for (const fallbackId of fallbackIds) {
+            try {
+              const { data: fallbackData, error: fallbackError } =
+                await supabase
+                  .from("daily_summaries")
+                  .select("*")
+                  .eq("id", fallbackId)
+                  .single();
+
+              if (fallbackData && !fallbackError) {
+                console.log("Using fallback data for ID:", fallbackId);
+                data = fallbackData;
+                supabaseError = null;
+                break;
+              }
+            } catch (fallbackErr) {
+              console.warn("Fallback ID also failed:", fallbackId, fallbackErr);
+            }
+          }
+        }
 
         if (data) {
           // Ensure takeaways are available

@@ -1,7 +1,5 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
-import { SessionContextProvider } from "@supabase/auth-helpers-react";
-import { supabase } from "@/lib/supabase";
 import TopNavigation from "@/components/TopNavigation";
 import LandingPage from "./pages/LandingPage";
 import HomePage from "./pages/HomePage";
@@ -16,7 +14,9 @@ import QuestPage from "@/pages/QuestPage";
 import Dashboard from "@/pages/Dashboard";
 import Login from "@/pages/Login";
 import SummaryPage from "@/pages/SummaryPage";
-import { TrendProvider } from "@/contexts/TrendContext";
+import PricingPage from "@/pages/PricingPage";
+import SuccessPage from "@/pages/SuccessPage";
+import CancelPage from "@/pages/CancelPage";
 
 /**
  * App component - Main application router
@@ -33,33 +33,35 @@ import { TrendProvider } from "@/contexts/TrendContext";
  * - /quest/:slug: Quest page
  * - /dashboard: Dashboard page
  * - /summary/:id: News summary page
+ * - /pricing: Pricing page
+ * - /success: Payment success page
+ * - /cancel: Payment cancel page
  * - *: 404 Not Found page
  */
 function App() {
   return (
-    <SessionContextProvider supabaseClient={supabase}>
-      <Router>
-        <TrendProvider>
-          <TopNavigation />
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/home" element={<HomePage />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/explore" element={<ExplorePage />} />
-            <Route path="/learn" element={<Learn />} />
-            <Route path="/learn/:slug" element={<TopicPage />} />
-            <Route path="/learn/:slug/flashcards" element={<FlashcardPage />} />
-            <Route path="/learn/:slug/quiz" element={<QuizPage />} />
-            <Route path="/quest/:slug" element={<QuestPage />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/summary/:id" element={<SummaryPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <Toaster />
-        </TrendProvider>
-      </Router>
-    </SessionContextProvider>
+    <>
+      <TopNavigation />
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/home" element={<HomePage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/explore" element={<ExplorePage />} />
+        <Route path="/learn" element={<Learn />} />
+        <Route path="/learn/:slug" element={<TopicPage />} />
+        <Route path="/learn/:slug/flashcards" element={<FlashcardPage />} />
+        <Route path="/learn/:slug/quiz" element={<QuizPage />} />
+        <Route path="/quest/:slug" element={<QuestPage />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/summary/:id" element={<SummaryPage />} />
+        <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/success" element={<SuccessPage />} />
+        <Route path="/cancel" element={<CancelPage />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      <Toaster />
+    </>
   );
 }
 
