@@ -30,24 +30,18 @@ export const getAllTopics = async (): Promise<Topic[]> => {
   return (data as Topic[]) || [];
 };
 
-export const getTopicBySlug = async (slug: string): Promise<Topic | null> => {
+export const getTopicBySlug = async (slug: string) => {
   const { data, error } = await supabase
     .from("topics")
     .select("*")
     .eq("slug", slug)
-    .single();
+    .limit(1); // limit instead of .single()
 
-  if (error) {
-    if (error.code === "PGRST116") {
-      // PostgREST error for "Not a single row"
-      console.warn(`No topic found with slug: ${slug}`);
-      return null;
-    }
-    console.error("Error fetching topic by slug:", error);
-    throw new Error(error.message);
+  if (error || !data || data.length === 0) {
+    throw new Error("Topic not found for slug: " + slug);
   }
 
-  return data as Topic | null;
+  return data[0];
 };
 
 export const getTopicById = async (id: string): Promise<Topic | null> => {

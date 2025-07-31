@@ -7,10 +7,4 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("Missing Supabase environment variables");
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  global: {
-    headers: {
-      Accept: "application/json",
-    },
-  },
-});
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);

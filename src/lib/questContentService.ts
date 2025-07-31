@@ -5,9 +5,29 @@ export interface QuestContent {
   title: string;
   summary: string;
   lessons: QuestLesson[];
-  flashcards: QuestFlashcard[];
-  quizQuestions: QuizQuestion[];
-  badges: QuestBadges;
+  flashcards?: QuestFlashcard[];
+  quizQuestions?: QuizQuestion[];
+  badges?: QuestBadges;
+  // Micro Project model fields (optional)
+  microProject?: {
+    title: string;
+    description: string;
+    shareCTA: {
+      text: string;
+      url: string;
+    };
+  };
+  miniBuilderTools?: Array<{
+    name: string;
+    url: string;
+    use: string;
+  }>;
+  resourceTrail?: Array<{
+    name: string;
+    url: string;
+    description: string;
+  }>;
+  toolkits?: any; // Keep as any for now, since Toolkits section is not being changed
 }
 
 export interface QuestLesson {
@@ -44,6 +64,131 @@ export interface QuestBadges {
 
 // Topic-specific content templates
 const topicContentTemplates: Record<string, QuestContent> = {
+  "ai-fundamentals": {
+    id: "ai-fundamentals",
+    title: "AI Fundamentals",
+    summary:
+      "Understand the basics of Artificial Intelligence, how it works, its types, and real-world use cases.",
+    lessons: [
+      {
+        id: "intro-ai",
+        title: "Introduction to Artificial Intelligence",
+        content: `Artificial Intelligence (AI) is the simulation of human intelligence by machines to perform tasks like learning, reasoning, and decision-making.\n\nKey concepts:\n• AI vs Human Intelligence\n• Types of AI: Narrow, General, and Superintelligent\n• History and evolution of AI\n• Current state of AI technology\n\nAI is transforming industries from healthcare to finance, making it essential knowledge for the modern world.`,
+        sources: [
+          "Stanford AI Course",
+          "MIT OpenCourseWare",
+          "AI Research Papers",
+        ],
+        soWhat:
+          "Understanding AI fundamentals helps you grasp how systems like ChatGPT, recommendation engines, and autonomous vehicles actually work behind the scenes.",
+      },
+      {
+        id: "machine-learning-basics",
+        title: "Machine Learning Basics",
+        content: `Machine Learning is a subset of AI that enables machines to learn from data without being explicitly programmed.\n\nThree main types:\n• Supervised Learning: Learning from labeled examples\n• Unsupervised Learning: Finding patterns in unlabeled data  \n• Reinforcement Learning: Learning through trial and error\n\nPopular algorithms include linear regression, decision trees, neural networks, and deep learning models.`,
+        sources: ["Coursera ML Course", "Google AI Education", "Kaggle Learn"],
+        soWhat:
+          "ML powers everything from Netflix recommendations to fraud detection. Knowing these basics helps you understand what's possible with data-driven solutions.",
+      },
+      {
+        id: "ai-applications",
+        title: "Real-World AI Applications",
+        content: `AI is being applied across virtually every industry, creating new opportunities and transforming existing processes.\n\nCommon applications:\n• Voice assistants (Siri, Alexa)\n• Recommendation systems (Netflix, Amazon)\n• Autonomous vehicles\n• Medical diagnosis\n• Financial trading\n• Content generation\n\nUnderstanding these applications helps you identify opportunities to leverage AI in your own projects.`,
+        sources: ["Industry Reports", "AI Case Studies", "Technology News"],
+        soWhat:
+          "Knowing AI applications helps you identify where AI can solve real problems and create value in your field.",
+      },
+    ],
+    flashcards: [
+      {
+        id: "fc1",
+        front: "What is Artificial Intelligence (AI)?",
+        back: "The simulation of human intelligence by machines to perform tasks like learning, reasoning, and decision-making.",
+      },
+      {
+        id: "fc2",
+        front: "What are the main types of AI?",
+        back: "Narrow AI, General AI, and Superintelligent AI.",
+      },
+      {
+        id: "fc3",
+        front: "What is machine learning?",
+        back: "A subset of AI that enables machines to learn from data without being explicitly programmed.",
+      },
+      {
+        id: "fc4",
+        front: "Name a common use case of AI in everyday life.",
+        back: "Voice assistants like Siri or Alexa.",
+      },
+      {
+        id: "fc5",
+        front: "What is the Turing Test?",
+        back: "A test to evaluate a machine's ability to exhibit human-like intelligence.",
+      },
+      {
+        id: "fc6",
+        front: "Difference between supervised and unsupervised learning?",
+        back: "Supervised learning uses labeled data; unsupervised learning uses unlabeled data.",
+      },
+    ],
+    quizQuestions: [
+      {
+        id: "q1",
+        question: "Which of the following is NOT a type of AI?",
+        options: ["Narrow AI", "Broad AI", "General AI", "Superintelligent AI"],
+        correctAnswer: 1,
+        explanation:
+          "Broad AI is not a standard classification. The main types are Narrow AI, General AI, and Superintelligent AI.",
+      },
+      {
+        id: "q2",
+        question: "What is the goal of the Turing Test?",
+        options: [
+          "To improve neural networks",
+          "To measure memory capacity",
+          "To evaluate human-like behavior in machines",
+          "To test GPU speed",
+        ],
+        correctAnswer: 2,
+        explanation:
+          "The Turing Test evaluates whether a machine can exhibit intelligent behavior equivalent to or indistinguishable from that of a human.",
+      },
+      {
+        id: "q3",
+        question: "Which field enables AI to learn from data?",
+        options: ["Data Mining", "Machine Learning", "Robotics", "Automation"],
+        correctAnswer: 1,
+        explanation:
+          "Machine Learning is the field that enables AI systems to learn and improve from data without being explicitly programmed.",
+      },
+      {
+        id: "q4",
+        question: "Which is an example of Narrow AI?",
+        options: [
+          "Human-level general intelligence",
+          "AI that writes books",
+          "Google Maps route optimization",
+          "Conscious robots",
+        ],
+        correctAnswer: 2,
+        explanation:
+          "Google Maps route optimization is a perfect example of Narrow AI - it's designed for a specific task and cannot perform general intelligence tasks.",
+      },
+      {
+        id: "q5",
+        question: "Unsupervised learning uses:",
+        options: [
+          "Pre-labeled data",
+          "Historical reports",
+          "Labeled and unlabeled data",
+          "Unlabeled data only",
+        ],
+        correctAnswer: 3,
+        explanation:
+          "Unsupervised learning works with unlabeled data to find hidden patterns and structures without predefined outputs.",
+      },
+    ],
+  },
   "ai-code-generation-copilot": {
     id: "ai-code-generation-copilot",
     title: "AI-Powered Code Generation with GitHub Copilot",
