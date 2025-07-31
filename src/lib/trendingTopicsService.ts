@@ -3,6 +3,94 @@ import { Topic } from "./topicService";
 // Mock trending topics data with reliable Unsplash images
 const mockTrendingTopics: Topic[] = [
   {
+    id: "ai-fundamentals",
+    created_at: new Date().toISOString(),
+    title: "AI Fundamentals",
+    summary:
+      "Understand the basics of Artificial Intelligence, how it works, its types, and real-world use cases.",
+    image_url:
+      "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=640&h=480&fit=crop&crop=center&auto=format&q=75",
+    source: "Tech Pulse",
+    slug: "ai-fundamentals",
+    category: "AI",
+    difficulty: "Beginner",
+    duration: 2 * 60, // 2 hours in minutes
+    xp: 500,
+    lessons: 6,
+    flashcards: [
+      {
+        term: "What is Artificial Intelligence (AI)?",
+        definition:
+          "The simulation of human intelligence by machines to perform tasks like learning, reasoning, and decision-making.",
+      },
+      {
+        term: "What are the main types of AI?",
+        definition: "Narrow AI, General AI, and Superintelligent AI.",
+      },
+      {
+        term: "What is machine learning?",
+        definition:
+          "A subset of AI that enables machines to learn from data without being explicitly programmed.",
+      },
+      {
+        term: "Name a common use case of AI in everyday life.",
+        definition: "Voice assistants like Siri or Alexa.",
+      },
+      {
+        term: "What is the Turing Test?",
+        definition:
+          "A test to evaluate a machine's ability to exhibit human-like intelligence.",
+      },
+      {
+        term: "Difference between supervised and unsupervised learning?",
+        definition:
+          "Supervised learning uses labeled data; unsupervised learning uses unlabeled data.",
+      },
+    ],
+    quiz: [
+      {
+        question: "Which of the following is NOT a type of AI?",
+        options: ["Narrow AI", "Broad AI", "General AI", "Superintelligent AI"],
+        correctAnswer: "Broad AI",
+      },
+      {
+        question: "What is the goal of the Turing Test?",
+        options: [
+          "To improve neural networks",
+          "To measure memory capacity",
+          "To evaluate human-like behavior in machines",
+          "To test GPU speed",
+        ],
+        correctAnswer: "To evaluate human-like behavior in machines",
+      },
+      {
+        question: "Which field enables AI to learn from data?",
+        options: ["Data Mining", "Machine Learning", "Robotics", "Automation"],
+        correctAnswer: "Machine Learning",
+      },
+      {
+        question: "Which is an example of Narrow AI?",
+        options: [
+          "Human-level general intelligence",
+          "AI that writes books",
+          "Google Maps route optimization",
+          "Conscious robots",
+        ],
+        correctAnswer: "Google Maps route optimization",
+      },
+      {
+        question: "Unsupervised learning uses:",
+        options: [
+          "Pre-labeled data",
+          "Historical reports",
+          "Labeled and unlabeled data",
+          "Unlabeled data only",
+        ],
+        correctAnswer: "Unlabeled data only",
+      },
+    ],
+  },
+  {
     id: "1",
     created_at: new Date().toISOString(),
     title: "AI-Powered Code Generation with GitHub Copilot",

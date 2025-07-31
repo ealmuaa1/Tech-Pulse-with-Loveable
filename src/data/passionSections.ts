@@ -444,4 +444,133 @@ export const passionSections: Record<string, PassionCard[]> = {
       },
     },
   ],
+  "Solo Founder Stack": [
+    {
+      id: "sf-1",
+      title: "Bootstrapping Essentials",
+      description: "Build and launch your startup with minimal resources",
+      subheading: "Build and launch your startup with minimal resources",
+      questCount: 4,
+      toolCount: 6,
+      badges: ["Bootstrap", "Beginner"],
+      category: "Solo Founder Stack",
+      gradient: "from-green-400 to-green-700",
+      icon: "Rocket",
+      isSpecial: true,
+      resources: {
+        dailyChallenge: {
+          description: "Embrace MVP over perfection - ship something today.",
+          tool: {
+            name: "Tally",
+            url: "https://tally.so",
+            description: "Free form builder for collecting user feedback",
+            pricing: "Free",
+          },
+        },
+        toolOfTheWeek: {
+          description: "Use Tally to create customer feedback forms",
+          tool: {
+            name: "Tally",
+            url: "https://tally.so",
+            description: "Free form builder for collecting user feedback",
+            pricing: "Free",
+          },
+        },
+        learnMoreResources: {
+          description: "Learn from other bootstrapped founders",
+          tool: {
+            name: "Indie Hackers",
+            url: "https://indiehackers.com",
+            description: "Community of bootstrapped founders sharing stories",
+            pricing: "Free",
+          },
+        },
+      },
+    },
+    {
+      id: "sf-2",
+      title: "Time & Energy Management",
+      description: "Maximize productivity and maintain sustainable work habits",
+      subheading: "Maximize productivity and maintain sustainable work habits",
+      questCount: 3,
+      toolCount: 5,
+      badges: ["Productivity", "Intermediate"],
+      category: "Solo Founder Stack",
+      gradient: "from-purple-400 to-purple-700",
+      icon: "Clock",
+      isSpecial: true,
+      resources: {
+        dailyChallenge: {
+          description:
+            "Use time-blocking with breaks - schedule 25-min focused sessions.",
+          tool: {
+            name: "Motion",
+            url: "https://motion.app",
+            description: "AI-powered calendar and scheduling assistant",
+            pricing: "Paid",
+          },
+        },
+        toolOfTheWeek: {
+          description: "Try Motion for AI-powered scheduling",
+          tool: {
+            name: "Motion",
+            url: "https://motion.app",
+            description: "AI-powered calendar and scheduling assistant",
+            pricing: "Paid",
+          },
+        },
+        learnMoreResources: {
+          description: "Read Deep Work by Cal Newport for focus strategies",
+          tool: {
+            name: "Deep Work by Cal Newport",
+            url: "https://www.amazon.com/Deep-Work-Focused-Success-Distracted/dp/1455586692",
+            description: "Book on focused work and productivity",
+            pricing: "Paid",
+          },
+        },
+      },
+    },
+    {
+      id: "sf-3",
+      title: "Customer Discovery & Validation",
+      description: "Find and validate your target market effectively",
+      subheading: "Find and validate your target market effectively",
+      questCount: 5,
+      toolCount: 8,
+      badges: ["Validation", "Advanced"],
+      category: "Solo Founder Stack",
+      gradient: "from-blue-400 to-blue-700",
+      icon: "Users",
+      isSpecial: true,
+      resources: {
+        dailyChallenge: {
+          description: "Talk to 3 potential users this week.",
+          tool: {
+            name: "Typeform",
+            url: "https://typeform.com",
+            description: "Interactive forms and surveys for user research",
+            pricing: "Freemium",
+          },
+        },
+        toolOfTheWeek: {
+          description: "Create user research surveys with Typeform",
+          tool: {
+            name: "Typeform",
+            url: "https://typeform.com",
+            description: "Interactive forms and surveys for user research",
+            pricing: "Freemium",
+          },
+        },
+        learnMoreResources: {
+          description: "Read The Mom Test for customer interview techniques",
+          tool: {
+            name: "The Mom Test",
+            url: "https://www.amazon.com/Mom-Test-customers-business-everyone/dp/1492180742",
+            description: "Book on customer development and validation",
+            pricing: "Paid",
+          },
+        },
+      },
+    },
+  ],
 };

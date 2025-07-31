@@ -42,40 +42,40 @@ const iconMap: Record<string, React.ReactNode> = {
   Clock: <Clock className="w-6 h-6" />,
 };
 
-// Mock recommended cards
-const mockRecommendedCards = [
+// Jumpstart This Week cards - High-impact short wins
+const jumpstartCards = [
   {
-    id: "rec-1",
-    title: "React Advanced Patterns",
-    description: "Master advanced React patterns and performance optimization",
+    id: "js-1",
+    title: "Build Your First AI Chatbot",
+    description: "Create a simple chatbot using OpenAI API in under 2 hours",
     image:
-      "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&h=250&fit=crop&crop=center&auto=format&q=75",
-    category: "Frontend",
-    difficulty: "Advanced",
-    completionRate: 78,
-    estimatedTime: "6h",
+      "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&h=250&fit=crop&crop=center&auto=format&q=75",
+    category: "AI",
+    difficulty: "Beginner",
+    completionRate: 92,
+    estimatedTime: "2h",
   },
   {
-    id: "rec-2",
-    title: "Python Data Science Pipeline",
-    description: "Build end-to-end data pipelines with Python and pandas",
+    id: "js-2",
+    title: "Deploy Your First Web App",
+    description: "Get your project live on Vercel or Netlify in 30 minutes",
     image:
-      "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=400&h=250&fit=crop&crop=center&auto=format&q=75",
-    category: "Data Science",
-    difficulty: "Intermediate",
-    completionRate: 85,
-    estimatedTime: "8h",
+      "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=250&fit=crop&crop=center&auto=format&q=75",
+    category: "Deployment",
+    difficulty: "Beginner",
+    completionRate: 88,
+    estimatedTime: "30m",
   },
   {
-    id: "rec-3",
-    title: "Kubernetes Production Deployment",
-    description: "Deploy and manage applications in production Kubernetes",
+    id: "js-3",
+    title: "Master Git Workflow",
+    description: "Learn essential Git commands and create your first PR",
     image:
       "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400&h=250&fit=crop&crop=center&auto=format&q=75",
-    category: "DevOps",
-    difficulty: "Advanced",
-    completionRate: 72,
-    estimatedTime: "12h",
+    category: "Development",
+    difficulty: "Beginner",
+    completionRate: 95,
+    estimatedTime: "1h",
   },
 ];
 
@@ -607,15 +607,15 @@ const ExplorePage = () => {
           </div>
         ))}
 
-        {/* Recommended for You Section */}
+        {/* Jumpstart This Week Section */}
         <div className="mb-12">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
             <Star className="w-6 h-6 text-yellow-500" />
-            Recommended for You
+            🔥 Jumpstart This Week
           </h2>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mockRecommendedCards.map((card) => (
+            {jumpstartCards.map((card) => (
               <Card
                 key={card.id}
                 className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 overflow-hidden transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl cursor-pointer"
