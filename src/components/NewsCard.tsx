@@ -52,8 +52,19 @@ const NewsCard: React.FC<NewsCardProps> = ({
   useEffect(() => {
     const fetchImage = async () => {
       try {
-        const reliableUrl = await getReliableImageUrl(topic || title);
+        // Use topic first, then title as fallback for better image matching
+        const searchQuery = topic || title;
+        console.log(
+          `[NewsCard] Fetching image for: "${searchQuery}" (topic: "${topic}")`
+        );
+
+        const reliableUrl = await getReliableImageUrl(searchQuery);
         setCardImageUrl(reliableUrl);
+
+        console.log(
+          `[NewsCard] Selected image for "${searchQuery}":`,
+          reliableUrl
+        );
       } catch (error) {
         console.warn("Failed to fetch image for:", topic || title, error);
       }

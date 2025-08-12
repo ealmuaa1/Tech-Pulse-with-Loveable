@@ -410,14 +410,7 @@ const ExplorePage = () => {
                                 </span>
                               </div>
                               <div className="flex-1">
-                                <p className="text-base font-semibold text-gray-900 dark:text-white mb-2">
-                                  Daily 1-Minute Challenge
-                                </p>
-                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                                  {card.resources?.dailyChallenge.description ||
-                                    "Complete today's challenge to boost your skills."}
-                                </p>
-                                <div className="space-y-1">
+                                <div className="mb-2">
                                   <a
                                     href={
                                       card.resources?.dailyChallenge.tool.url ||
@@ -425,7 +418,7 @@ const ExplorePage = () => {
                                     }
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className={`inline-flex items-center gap-1 text-sm transition-colors ${
+                                    className={`inline-flex items-center gap-1 text-sm font-semibold transition-colors ${
                                       card.id === "pp-1"
                                         ? "text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300"
                                         : card.id === "pp-2"
@@ -441,19 +434,14 @@ const ExplorePage = () => {
                                     {card.resources?.dailyChallenge.tool.name ||
                                       "Tool"}
                                   </a>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 ml-4">
-                                    {
-                                      card.resources?.dailyChallenge.tool
-                                        .description
-                                    }{" "}
-                                    (
-                                    {
-                                      card.resources?.dailyChallenge.tool
-                                        .pricing
-                                    }
-                                    )
-                                  </p>
                                 </div>
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                                  This tool provides daily challenges to boost
+                                  your skills and productivity (
+                                  {card.resources?.dailyChallenge.tool
+                                    .pricing || "Tool"}
+                                  )
+                                </p>
                               </div>
                             </li>
 
@@ -477,14 +465,7 @@ const ExplorePage = () => {
                                 </span>
                               </div>
                               <div className="flex-1">
-                                <p className="text-base font-semibold text-gray-900 dark:text-white mb-2">
-                                  Tool of the Week
-                                </p>
-                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                                  {card.resources?.toolOfTheWeek.description ||
-                                    "Try this week's featured tool to enhance your workflow."}
-                                </p>
-                                <div className="space-y-1">
+                                <div className="mb-2">
                                   <a
                                     href={
                                       card.resources?.toolOfTheWeek.tool.url ||
@@ -492,7 +473,7 @@ const ExplorePage = () => {
                                     }
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className={`inline-flex items-center gap-1 text-sm transition-colors ${
+                                    className={`inline-flex items-center gap-1 text-sm font-semibold transition-colors ${
                                       card.id === "pp-1"
                                         ? "text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300"
                                         : card.id === "pp-2"
@@ -508,16 +489,14 @@ const ExplorePage = () => {
                                     {card.resources?.toolOfTheWeek.tool.name ||
                                       "Tool"}
                                   </a>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 ml-4">
-                                    {
-                                      card.resources?.toolOfTheWeek.tool
-                                        .description
-                                    }{" "}
-                                    (
-                                    {card.resources?.toolOfTheWeek.tool.pricing}
-                                    )
-                                  </p>
                                 </div>
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                                  This featured tool enhances your workflow and
+                                  productivity (
+                                  {card.resources?.toolOfTheWeek.tool.pricing ||
+                                    "Tool"}
+                                  )
+                                </p>
                               </div>
                             </li>
 
@@ -541,15 +520,7 @@ const ExplorePage = () => {
                                 </span>
                               </div>
                               <div className="flex-1">
-                                <p className="text-base font-semibold text-gray-900 dark:text-white mb-2">
-                                  Learn More Resources
-                                </p>
-                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                                  {card.resources?.learnMoreResources
-                                    .description ||
-                                    "Explore additional resources to deepen your knowledge."}
-                                </p>
-                                <div className="space-y-1">
+                                <div className="mb-2">
                                   <a
                                     href={
                                       card.resources?.learnMoreResources.tool
@@ -557,7 +528,7 @@ const ExplorePage = () => {
                                     }
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className={`inline-flex items-center gap-1 text-sm transition-colors ${
+                                    className={`inline-flex items-center gap-1 text-sm font-semibold transition-colors ${
                                       card.id === "pp-1"
                                         ? "text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300"
                                         : card.id === "pp-2"
@@ -573,19 +544,14 @@ const ExplorePage = () => {
                                     {card.resources?.learnMoreResources.tool
                                       .name || "Resource"}
                                   </a>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 ml-4">
-                                    {
-                                      card.resources?.learnMoreResources.tool
-                                        .description
-                                    }{" "}
-                                    (
-                                    {
-                                      card.resources?.learnMoreResources.tool
-                                        .pricing
-                                    }
-                                    )
-                                  </p>
                                 </div>
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                                  This resource helps you deepen your knowledge
+                                  and expand your skills (
+                                  {card.resources?.learnMoreResources.tool
+                                    .pricing || "Resource"}
+                                  )
+                                </p>
                               </div>
                             </li>
                           </ul>
@@ -593,79 +559,11 @@ const ExplorePage = () => {
                       )}
                     </div>
                   )}
-
-                  <Button
-                    onClick={() => handleExploreClick(card.id, card.category)}
-                    className="w-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white shadow-md py-2 mt-auto"
-                  >
-                    <Play className="w-4 h-4 mr-2" />
-                    Explore
-                  </Button>
                 </Card>
               ))}
             </div>
           </div>
         ))}
-
-        {/* Jumpstart This Week Section */}
-        <div className="mb-12">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
-            <Star className="w-6 h-6 text-yellow-500" />
-            🔥 Jumpstart This Week
-          </h2>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {jumpstartCards.map((card) => (
-              <Card
-                key={card.id}
-                className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border border-white/20 dark:border-gray-700/20 overflow-hidden transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl cursor-pointer"
-                onClick={() => handleCardClick(card.id)}
-              >
-                <div className="relative h-48 overflow-hidden">
-                  <img
-                    src={card.image}
-                    alt={card.title}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
-                  <Badge className="absolute top-4 left-4 bg-white/90 dark:bg-gray-800/90 text-gray-800 dark:text-gray-200 backdrop-blur-sm">
-                    {card.category}
-                  </Badge>
-                  <Badge
-                    className={`absolute top-4 right-4 ${getDifficultyColor(
-                      card.difficulty
-                    )} backdrop-blur-sm`}
-                  >
-                    {card.difficulty}
-                  </Badge>
-                </div>
-
-                <CardHeader>
-                  <CardTitle className="text-xl font-bold line-clamp-2">
-                    {card.title}
-                  </CardTitle>
-                </CardHeader>
-
-                <CardContent>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm leading-relaxed line-clamp-2">
-                    {card.description}
-                  </p>
-
-                  <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-4 h-4" />
-                      <span>{card.estimatedTime}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Award className="w-4 h-4" />
-                      <span>{card.completionRate}% complete</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
 
         {/* Bonus Power Tips Section */}
         <div className="mb-8">

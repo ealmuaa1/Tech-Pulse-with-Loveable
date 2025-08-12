@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
 import TopNavigation from "@/components/TopNavigation";
+// import EmailPopup from "@/components/EmailPopup"; // deprecated in favor of EmailSignupModal
 import LandingPage from "./pages/LandingPage";
 import HomePage from "./pages/HomePage";
 import Profile from "./pages/Profile";
@@ -17,6 +18,8 @@ import SummaryPage from "@/pages/SummaryPage";
 import PricingPage from "@/pages/PricingPage";
 import SuccessPage from "@/pages/SuccessPage";
 import CancelPage from "@/pages/CancelPage";
+// import EmailOnboardingModal from "@/components/EmailOnboardingModal"; // unified into EmailSignupModal
+import EmailSignupModal from "@/components/EmailSignupModal";
 
 /**
  * App component - Main application router
@@ -60,6 +63,8 @@ function App() {
         <Route path="/cancel" element={<CancelPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      {/* Unified modal */}
+      <EmailSignupModal />
       <Toaster />
     </>
   );
