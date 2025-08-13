@@ -43,32 +43,30 @@ import EmailSignupModal from "@/components/EmailSignupModal";
  */
 function App() {
   return (
-    <div className="tp-scale">
-      <div className="tp-body">
-        <TopNavigation />
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/home" element={<HomePage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/explore" element={<ExplorePage />} />
-          <Route path="/learn" element={<Learn />} />
-          <Route path="/learn/:slug" element={<TopicPage />} />
-          <Route path="/learn/:slug/flashcards" element={<FlashcardPage />} />
-          <Route path="/learn/:slug/quiz" element={<QuizPage />} />
-          <Route path="/quest/:slug" element={<QuestPage />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/summary/:id" element={<SummaryPage />} />
-          <Route path="/pricing" element={<PricingPage />} />
-          <Route path="/success" element={<SuccessPage />} />
-          <Route path="/cancel" element={<CancelPage />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        {/* Unified modal */}
-        <EmailSignupModal />
-        <Toaster />
-      </div>
-    </div>
+    <>
+      <TopNavigation />
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/home" element={<HomePage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/explore" element={<ExplorePage />} />
+        <Route path="/learn" element={<Learn />} />
+        <Route path="/learn/:slug" element={<TopicPage />} />
+        <Route path="/learn/:slug/flashcards" element={<FlashcardPage />} />
+        <Route path="/learn/:slug/quiz" element={<QuizPage />} />
+        <Route path="/quest/:slug" element={<QuestPage />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/summary/:id" element={<SummaryPage />} />
+        <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/success" element={<SuccessPage />} />
+        <Route path="/cancel" element={<CancelPage />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      {/* Unified modal */}
+      <EmailSignupModal />
+      <Toaster />
+    </>
   );
 }
 

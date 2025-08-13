@@ -130,13 +130,13 @@ export default function TechDigestSection() {
 
       // For now, always use mock data to ensure diverse images
       console.log("Using mock data for diverse images");
-
+      
       // Import mock data
       const { getAllMockNewsIds, getMockNewsItem } = await import(
         "@/lib/mockNewsService"
       );
       const mockIds = getAllMockNewsIds();
-
+      
       // Use all available mock items (up to 24)
       const mockItems = mockIds
         .slice(0, 24)
@@ -153,11 +153,8 @@ export default function TechDigestSection() {
         .filter(Boolean); // Remove any null items
 
       console.log("Mock items created:", mockItems.length);
-      console.log(
-        "Mock topics:",
-        mockItems.map((item) => item.topic)
-      );
-
+      console.log("Mock topics:", mockItems.map(item => item.topic));
+      
       const finalData = mockItems;
 
       // Step 1: Add console logs
@@ -226,7 +223,7 @@ export default function TechDigestSection() {
           </Badge>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 tp-gap">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 24 }).map((_, index) => (
             <div
               key={index}
@@ -278,7 +275,7 @@ export default function TechDigestSection() {
       </div>
 
       {/* News Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 tp-gap">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {data.map((item, index) => {
           // Ensure all cards have summary and takeaways for consistent hover functionality
           const summary =

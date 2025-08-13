@@ -19,20 +19,20 @@ const TopNavigation = () => {
 
   return (
     <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 z-20 shadow-sm">
-      <div className="max-w-6xl mx-auto px-6 py-4 tp-pad">
+      <div className="max-w-6xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo/Title */}
           <Link to="/" className="flex items-center gap-2 group">
             <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg transform rotate-3 group-hover:rotate-6 transition-transform">
               <Home className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-gray-900 to-purple-700 dark:from-white dark:to-purple-400 bg-clip-text text-transparent tp-body">
+            <span className="text-xl font-bold bg-gradient-to-r from-gray-900 to-purple-700 dark:from-white dark:to-purple-400 bg-clip-text text-transparent">
               Tech Pulse
             </span>
           </Link>
 
           {/* Navigation Links */}
-          <div className="hidden md:flex items-center gap-6 text-sm text-gray-600 dark:text-gray-400 tp-body">
+          <div className="hidden md:flex items-center gap-6 text-sm text-gray-600 dark:text-gray-400">
             <Link
               to="/"
               className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
