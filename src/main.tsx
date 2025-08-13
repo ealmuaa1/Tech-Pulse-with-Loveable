@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter as Router } from "react-router-dom";
@@ -9,6 +10,11 @@ import "./lib/firebase"; // to initialize Firebase
 import { AuthProvider } from "@/contexts/AuthProvider";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { TrendProvider } from "@/contexts/TrendContext";
+import { initCompactFromStorage, initKeyboardToggle } from "./lib/compactToggle";
+
+// Initialize compact UI mode
+initCompactFromStorage();
+initKeyboardToggle();
 
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error("Failed to find the root element");

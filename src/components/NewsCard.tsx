@@ -70,7 +70,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
 
   return (
     <article
-      className="group cursor-pointer bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-200 dark:border-gray-700"
+      className="group cursor-pointer bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-200 dark:border-gray-700 tp-radius"
       onClick={handleCardClick}
     >
       {/* Image Section */}
@@ -116,7 +116,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
       </div>
 
       {/* Content Section */}
-      <div className="p-3">
+      <div className="p-3 tp-pad">
         {/* Topic Tag */}
         <div className="mb-2">
           <span className="inline-block bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs px-2 py-1 rounded-md">
@@ -125,7 +125,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
         </div>
 
         {/* Title */}
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white leading-snug line-clamp-2 mb-2">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white leading-snug line-clamp-2 mb-2 tp-h3">
           {title}
         </h3>
 

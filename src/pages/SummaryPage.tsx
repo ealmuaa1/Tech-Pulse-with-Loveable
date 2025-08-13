@@ -21,10 +21,10 @@ function Section({
 }) {
   return (
     <section className="mt-8 md:mt-10">
-      <h2 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white">
+      <h2 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white tp-h3">
         {title}
       </h2>
-      <div className="mt-3 text-[15px] md:text-base leading-7 md:leading-8 text-gray-700 dark:text-gray-300">
+      <div className="mt-3 text-[15px] md:text-base leading-7 md:leading-8 text-gray-700 dark:text-gray-300 tp-body">
         {children}
       </div>
     </section>
@@ -247,7 +247,7 @@ const SummaryPage: React.FC = () => {
                 </span>
               )}
             </div>
-            <h1 className="mt-2 text-3xl md:text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
+            <h1 className="mt-2 text-3xl md:text-4xl font-bold tracking-tight text-gray-900 dark:text-white tp-body">
               {newsItem.title}
             </h1>
           </div>
