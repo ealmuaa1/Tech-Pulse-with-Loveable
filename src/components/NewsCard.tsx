@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { BookOpen, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   getReliableImageUrl,
   getSafeImageUrl,
   handleImageError,
 } from "@/lib/imageService";
+import { ensureExcerpt } from "@/utils/text";
 
 interface NewsCardProps {
   id?: string;
@@ -17,7 +17,6 @@ interface NewsCardProps {
   imageUrl?: string;
   url?: string;
   publishedAt?: string;
-  isAlwaysExpanded?: boolean;
 }
 
 const NewsCard: React.FC<NewsCardProps> = ({
@@ -30,49 +29,25 @@ const NewsCard: React.FC<NewsCardProps> = ({
   imageUrl,
   url,
   publishedAt,
-  isAlwaysExpanded = false,
 }) => {
   const [cardImageUrl, setCardImageUrl] = useState("/placeholder.svg");
   const navigate = useNavigate();
-
-  // Debug logging for SummaryPage
-  useEffect(() => {
-    if (isAlwaysExpanded) {
-      console.log("NewsCard (SummaryPage) props:", {
-        title,
-        hasUrl: !!url,
-        url,
-        hasSummary: !!summary,
-        hasTakeaways: takeaways.length > 0,
-      });
-    }
-  }, [isAlwaysExpanded, title, url, summary, takeaways]);
 
   // Fetch image for the topic
   useEffect(() => {
     const fetchImage = async () => {
       try {
-        // Use topic first, then title as fallback for better image matching
         const searchQuery = topic || title;
-        console.log(
-          `[NewsCard] Fetching image for: "${searchQuery}" (topic: "${topic}")`
-        );
-
         const reliableUrl = await getReliableImageUrl(searchQuery);
         setCardImageUrl(reliableUrl);
-
-        console.log(
-          `[NewsCard] Selected image for "${searchQuery}":`,
-          reliableUrl
-        );
       } catch (error) {
         console.warn("Failed to fetch image for:", topic || title, error);
       }
     };
     fetchImage();
-  }, [topic, title]);
+  }, [topic, title, id]);
 
-  const handleReadSummary = () => {
+  const handleCardClick = () => {
     if (id) {
       navigate(`/summary/${id}`);
     }
@@ -91,15 +66,21 @@ const NewsCard: React.FC<NewsCardProps> = ({
     }
   };
 
+  const excerpt = ensureExcerpt(summary, "Quick take: details inside.");
+
   return (
-    <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-200 dark:border-gray-700">
+    <article
+      className="group cursor-pointer bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-200 dark:border-gray-700"
+      onClick={handleCardClick}
+    >
       {/* Image Section */}
-      <div className="relative h-48 overflow-hidden group">
+      <div className="relative aspect-[16/9] overflow-hidden">
         <img
           src={getSafeImageUrl(imageUrl || cardImageUrl, "/placeholder.svg")}
           alt={title}
           onError={(e) => handleImageError(e, "/placeholder.svg")}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+          loading="lazy"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
 
@@ -119,88 +100,41 @@ const NewsCard: React.FC<NewsCardProps> = ({
           </div>
         )}
 
-        {/* Hover-only Read News Summary Button */}
-        {id && (summary || takeaways.length > 0) && (
-          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
+        {/* Enhanced Hover Overlay */}
+        <div className="absolute inset-0 flex items-center justify-center before:absolute before:inset-0 before:bg-gradient-to-t from-black/55 via-black/35 to-transparent before:opacity-90">
+          <div className="relative z-10 opacity-0 translate-y-1 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 ease-out">
             <button
-              onClick={handleReadSummary}
-              className="bg-white/95 dark:bg-gray-900/95 text-gray-900 dark:text-white hover:bg-white dark:hover:bg-gray-800 border-none shadow-lg rounded-lg px-4 py-2 flex items-center gap-2 font-medium text-sm transition-all duration-200 transform hover:scale-105 backdrop-blur-sm"
+              className="rounded-full px-4 py-2 text-sm font-medium text-white
+                         backdrop-blur-md bg-white/10 border border-white/20
+                         shadow-[0_8px_30px_rgb(0,0,0,0.25)]
+                         hover:bg-white/15 active:scale-95 transition"
             >
-              <BookOpen className="w-4 h-4" />
-              Read News Summary
+              Read full summary →
             </button>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Content Section */}
-      <div className="p-4">
-        {/* Title */}
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 leading-tight">
-          {title}
-        </h3>
-
+      <div className="p-3">
         {/* Topic Tag */}
-        <div className="mb-3">
+        <div className="mb-2">
           <span className="inline-block bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs px-2 py-1 rounded-md">
             {topic}
           </span>
         </div>
 
-        {/* Always Show Summary Content for SummaryPage */}
-        {isAlwaysExpanded && (summary || takeaways.length > 0) && (
-          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            {/* Summary */}
-            {summary && (
-              <div className="mb-4">
-                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                  Summary
-                </h4>
-                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                  {summary}
-                </p>
-              </div>
-            )}
+        {/* Title */}
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white leading-snug line-clamp-2 mb-2">
+          {title}
+        </h3>
 
-            {/* Key Takeaways */}
-            {takeaways.length > 0 && (
-              <div className="mb-4">
-                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
-                  Key Takeaways
-                </h4>
-                <ul className="space-y-1">
-                  {takeaways.slice(0, 3).map((point, index) => (
-                    <li
-                      key={index}
-                      className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300"
-                    >
-                      <span className="text-indigo-500 dark:text-indigo-400 mt-1 flex-shrink-0">
-                        •
-                      </span>
-                      <span className="leading-relaxed">{point}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Read More Link */}
-            {url && (
-              <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block text-blue-600 hover:text-blue-800 font-semibold underline"
-                >
-                  🔗 Read the full article
-                </a>
-              </div>
-            )}
-          </div>
-        )}
+        {/* Excerpt */}
+        <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-3">
+          {excerpt}
+        </p>
       </div>
-    </div>
+    </article>
   );
 };
 

@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, ExternalLink, Calendar, Tag } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/lib/supabase";
 import {
   getReliableImageUrl,
@@ -10,40 +9,27 @@ import {
   handleImageError,
 } from "@/lib/imageService";
 import { getMockNewsItem, MockNewsItem } from "@/lib/mockNewsService";
-import sanitizeHtml from "sanitize-html";
-import NewsCard from "@/components/NewsCard";
+import { sentencesToBullets, ensureExcerpt } from "@/utils/text";
 
-// Helper function to generate takeaways from summary
-const generateTakeaways = (summary: string): string[] => {
-  if (!summary) return [];
-
-  // Split summary into sentences
-  const sentences = summary.split(/[.!?]+/).filter((s) => s.trim().length > 10);
-
-  // Extract key points (first 3 meaningful sentences)
-  const takeaways = sentences
-    .slice(0, 3)
-    .map((sentence) => sentence.trim())
-    .filter((sentence) => sentence.length > 20)
-    .map((sentence) => {
-      // Clean up the sentence
-      return sentence
-        .replace(/^[^a-zA-Z]*/, "") // Remove leading non-letters
-        .replace(/[^a-zA-Z0-9\s.,!?-]*$/, "") // Remove trailing non-letters
-        .trim();
-    });
-
-  return takeaways.slice(0, 3);
-};
-
-// Helper function to generate URL when missing
-const generateUrl = (title: string, source: string): string => {
-  if (!title) return "";
-
-  // Create a Google search URL for the title
-  const searchQuery = encodeURIComponent(title);
-  return `https://www.google.com/search?q=${searchQuery}`;
-};
+// Section component for consistent styling
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="mt-8 md:mt-10">
+      <h2 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white">
+        {title}
+      </h2>
+      <div className="mt-3 text-[15px] md:text-base leading-7 md:leading-8 text-gray-700 dark:text-gray-300">
+        {children}
+      </div>
+    </section>
+  );
+}
 
 interface NewsItem {
   id: string;
@@ -56,6 +42,9 @@ interface NewsItem {
   published_at?: string;
   created_at?: string;
   image?: string;
+  why_matters?: string;
+  whats_new?: string;
+  impact?: string;
 }
 
 const SummaryPage: React.FC = () => {
@@ -65,9 +54,6 @@ const SummaryPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState("/placeholder.svg");
-
-  // Debug: Confirm component is rendering
-  console.log("SummaryPage rendering with id:", id);
 
   useEffect(() => {
     const fetchNewsItem = async () => {
@@ -124,16 +110,10 @@ const SummaryPage: React.FC = () => {
           // Ensure takeaways are available
           const processedData = {
             ...data,
-            takeaways: data.takeaways || generateTakeaways(data.summary || ""),
+            takeaways:
+              data.takeaways || sentencesToBullets(data.summary || "", 3),
             url: data.url || generateUrl(data.title || "", data.source || ""),
           };
-          console.log("SummaryPage processed data:", {
-            title: processedData.title,
-            hasTakeaways: processedData.takeaways.length > 0,
-            takeaways: processedData.takeaways,
-            hasUrl: !!processedData.url,
-            url: processedData.url,
-          });
           setNewsItem(processedData);
           // Fetch image for the topic
           try {
@@ -148,14 +128,22 @@ const SummaryPage: React.FC = () => {
           // If not found in Supabase, check if it's a mock topic ID
           console.warn("News item not found in database:", supabaseError);
 
+          // Check if this is a mock ID (starts with "mock-")
+          let mockId = id;
+          if (id && id.startsWith("mock-")) {
+            mockId = id.substring(5); // Remove "mock-" prefix
+          }
+
           // Try to get from mock data
-          const mockItem = getMockNewsItem(id);
+          const mockItem = getMockNewsItem(mockId);
+
           if (mockItem) {
             // Ensure takeaways are available for mock data too
             const processedMockItem = {
               ...mockItem,
               takeaways:
-                mockItem.takeaways || generateTakeaways(mockItem.summary || ""),
+                mockItem.takeaways ||
+                sentencesToBullets(mockItem.summary || "", 3),
               url:
                 mockItem.url ||
                 generateUrl(mockItem.title || "", mockItem.source || ""),
@@ -191,94 +179,21 @@ const SummaryPage: React.FC = () => {
     fetchNewsItem();
   }, [id]);
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "";
-    try {
-      return new Date(dateString).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      });
-    } catch {
-      return "";
-    }
-  };
-
-  const sanitizeSummary = (summary: string): string => {
-    if (!summary)
-      return "This article is being summarized. Please check back soon.";
-
-    // Check if summary is too short
-    if (summary.length < 50) {
-      return "This article is being summarized. Please check back soon.";
-    }
-
-    // Check for problematic content that indicates raw HTML/script junk
-    const problematicPatterns = [
-      /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-      /<table\b[^<]*(?:(?!<\/table>)<[^<]*)*<\/table>/gi,
-      /<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi,
-      /<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi,
-      /<embed\b[^<]*(?:(?!<\/embed>)<[^<]*)*<\/embed>/gi,
-      /javascript:/gi,
-      /on\w+\s*=/gi,
-    ];
-
-    // If problematic content is found, return a fallback message
-    for (const pattern of problematicPatterns) {
-      if (pattern.test(summary)) {
-        return "This article is being summarized. Please check back soon.";
-      }
-    }
-
-    // Check if summary only contains external links (no meaningful content)
-    const linkOnlyPattern = /^[\s\S]*<a[^>]*href[^>]*>[\s\S]*<\/a>[\s\S]*$/i;
-    const textContent = summary.replace(/<[^>]*>/g, "").trim();
-    if (linkOnlyPattern.test(summary) && textContent.length < 30) {
-      return "This article is being summarized. Please check back soon.";
-    }
-
-    // Sanitize the HTML, allowing only specified safe tags
-    const sanitized = sanitizeHtml(summary, {
-      allowedTags: ["p", "ul", "li", "strong", "em"],
-      allowedAttributes: {
-        p: ["class"],
-        ul: ["class"],
-        li: ["class"],
-        strong: ["class"],
-        em: ["class"],
-      },
-      // Strip all links - keep text but remove href functionality
-      transformTags: {
-        a: (tagName, attribs) => {
-          // Convert links to span tags to keep text but remove clickability
-          return {
-            tagName: "span",
-            attribs: {
-              class: "text-blue-600 dark:text-blue-400 font-medium",
-            },
-          };
-        },
-      },
-    });
-
-    return sanitized;
+  // Helper function to generate URL when missing
+  const generateUrl = (title: string, source: string): string => {
+    if (!title) return "";
+    const searchQuery = encodeURIComponent(title);
+    return `https://www.google.com/search?q=${searchQuery}`;
   };
 
   const handleBack = () => {
     navigate(-1);
   };
 
-  const handleReadFullArticle = () => {
-    if (newsItem?.url) {
-      window.open(newsItem.url, "_blank", "noopener,noreferrer");
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="max-w-3xl mx-auto px-4 py-8">
           <div className="animate-pulse">
             <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-24 mb-8"></div>
             <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-lg mb-6"></div>
@@ -314,11 +229,22 @@ const SummaryPage: React.FC = () => {
     );
   }
 
+  const summary =
+    newsItem.summary ||
+    ensureExcerpt(
+      "",
+      "This article is being summarized. Please check back soon."
+    );
+  const takeaways: string[] =
+    Array.isArray(newsItem.takeaways) && newsItem.takeaways.length > 0
+      ? newsItem.takeaways
+      : sentencesToBullets(summary, 3);
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+        <div className="max-w-3xl mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
@@ -337,23 +263,81 @@ const SummaryPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Content - Matching Digest Page Layout */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Single NewsCard - Always Expanded */}
-        <div className="space-y-4">
-          <NewsCard
-            id={newsItem.id}
-            title={newsItem.title}
-            topic={newsItem.topic}
-            source={newsItem.source}
-            summary={newsItem.summary}
-            takeaways={newsItem.takeaways}
-            url={newsItem.url}
-            publishedAt={newsItem.published_at || newsItem.created_at}
-            imageUrl={newsItem.image || imageUrl}
-            isAlwaysExpanded={true} // New prop to always show content
-          />
+      {/* Main Content */}
+      <div className="container max-w-3xl mx-auto py-8 px-4">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              {newsItem.source && (
+                <span className="inline-block rounded bg-gray-100 dark:bg-gray-800 px-2 py-0.5 mr-2">
+                  {newsItem.source}
+                </span>
+              )}
+              {newsItem.published_at && (
+                <span>
+                  {new Date(newsItem.published_at).toLocaleDateString()}
+                </span>
+              )}
+            </div>
+            <h1 className="mt-2 text-3xl md:text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
+              {newsItem.title}
+            </h1>
+          </div>
         </div>
+
+        {/* Hero Image */}
+        {(newsItem.image || imageUrl) && (
+          <img
+            src={getSafeImageUrl(
+              newsItem.image || imageUrl,
+              "/placeholder.svg"
+            )}
+            alt={newsItem.title}
+            className="mt-6 rounded-xl w-full object-cover aspect-[16/9]"
+            onError={(e) => handleImageError(e, "/placeholder.svg")}
+          />
+        )}
+
+        {/* Sections in requested order */}
+        <Section title="Summary">
+          <p>{summary}</p>
+        </Section>
+
+        {newsItem.whats_new && (
+          <Section title="What's new">
+            <p>{newsItem.whats_new}</p>
+          </Section>
+        )}
+
+        {newsItem.impact && (
+          <Section title="Impact">
+            <p>{newsItem.impact}</p>
+          </Section>
+        )}
+
+        {takeaways.length > 0 && (
+          <Section title="Key takeaways">
+            <ul className="list-disc pl-5 space-y-2">
+              {takeaways.map((t, i) => (
+                <li key={i}>{t}</li>
+              ))}
+            </ul>
+          </Section>
+        )}
+
+        {newsItem.url && (
+          <Section title="Source">
+            <a
+              href={newsItem.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-1"
+            >
+              Read the full article <ExternalLink className="w-4 h-4" />
+            </a>
+          </Section>
+        )}
       </div>
     </div>
   );

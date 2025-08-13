@@ -17,6 +17,14 @@ export const getReliableImageUrl = async (query: string): Promise<string> => {
       "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=400&h=200&fit=crop&auto=format&q=80",
       "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&h=200&fit=crop&auto=format&q=80",
     ],
+    "deep learning": [
+      "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?w=400&h=200&fit=crop&auto=format&q=80",
+      "https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
+    "neural networks": [
+      "https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=400&h=200&fit=crop&auto=format&q=80",
+      "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
 
     // Blockchain & Crypto
     blockchain: [
@@ -34,6 +42,9 @@ export const getReliableImageUrl = async (query: string): Promise<string> => {
     ethereum: [
       "https://images.unsplash.com/photo-1621761191319-c6fb62004040?w=400&h=200&fit=crop&auto=format&q=80",
     ],
+    defi: [
+      "https://images.unsplash.com/photo-1620321023374-d1a68fbc720d?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
 
     // Cybersecurity
     cybersecurity: [
@@ -47,6 +58,9 @@ export const getReliableImageUrl = async (query: string): Promise<string> => {
     ],
     hacking: [
       "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
+    "data breach": [
+      "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400&h=200&fit=crop&auto=format&q=80",
     ],
 
     // Web Development
@@ -64,6 +78,12 @@ export const getReliableImageUrl = async (query: string): Promise<string> => {
     python: [
       "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=400&h=200&fit=crop&auto=format&q=80",
     ],
+    frontend: [
+      "https://images.unsplash.com/photo-1547658719-da2b51169166?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
+    backend: [
+      "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
 
     // Data Science
     "data science": [
@@ -72,6 +92,9 @@ export const getReliableImageUrl = async (query: string): Promise<string> => {
       "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=200&fit=crop&auto=format&q=80",
     ],
     analytics: [
+      "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
+    "big data": [
       "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=200&fit=crop&auto=format&q=80",
     ],
 
@@ -87,6 +110,9 @@ export const getReliableImageUrl = async (query: string): Promise<string> => {
     azure: [
       "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=400&h=200&fit=crop&auto=format&q=80",
     ],
+    "google cloud": [
+      "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
 
     // Mobile Development
     mobile: [
@@ -99,6 +125,9 @@ export const getReliableImageUrl = async (query: string): Promise<string> => {
     ],
     android: [
       "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
+    "app development": [
+      "https://images.unsplash.com/photo-1551650975-87deedd944c3?w=400&h=200&fit=crop&auto=format&q=80",
     ],
 
     // AR/VR
@@ -124,6 +153,9 @@ export const getReliableImageUrl = async (query: string): Promise<string> => {
     "internet of things": [
       "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=200&fit=crop&auto=format&q=80",
     ],
+    "smart home": [
+      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
 
     // Quantum Computing
     quantum: [
@@ -136,8 +168,14 @@ export const getReliableImageUrl = async (query: string): Promise<string> => {
 
     // Web3
     web3: [
-      "https://images.unsplash.com/photo-1620321023374-d1a68fbc720d?w=400&h=200&fit=crop&auto=format&q=80",
+      "https://images.unsplash.com/photo-1639762681057-408e52192e55?w=400&h=200&fit=crop&auto=format&q=80",
       "https://images.unsplash.com/photo-1621761191319-c6fb62004040?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
+    metaverse: [
+      "https://images.unsplash.com/photo-1593508512255-86ab42a8e620?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
+    nft: [
+      "https://images.unsplash.com/photo-1620321023374-d1a68fbc720d?w=400&h=200&fit=crop&auto=format&q=80",
     ],
 
     // Startup & Business
@@ -147,6 +185,65 @@ export const getReliableImageUrl = async (query: string): Promise<string> => {
     ],
     business: [
       "https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
+    "venture capital": [
+      "https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
+
+    // Additional topics for mock data
+    "quantum computing": [
+      "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400&h=200&fit=crop&auto=format&q=80",
+      "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
+    "green tech": [
+      "https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?w=400&h=200&fit=crop&auto=format&q=80",
+      "https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
+    web3: [
+      "https://images.unsplash.com/photo-1639762681057-408e52192e55?w=400&h=200&fit=crop&auto=format&q=80",
+      "https://images.unsplash.com/photo-1621761191319-c6fb62004040?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
+    mobile: [
+      "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&h=200&fit=crop&auto=format&q=80",
+      "https://images.unsplash.com/photo-1551650975-87deedd944c3?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
+    gaming: [
+      "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&h=200&fit=crop&auto=format&q=80",
+      "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
+    fintech: [
+      "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=400&h=200&fit=crop&auto=format&q=80",
+      "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
+    "machine learning": [
+      "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=400&h=200&fit=crop&auto=format&q=80",
+      "https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
+    telecommunications: [
+      "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=400&h=200&fit=crop&auto=format&q=80",
+      "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
+    "software engineering": [
+      "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&h=200&fit=crop&auto=format&q=80",
+      "https://images.unsplash.com/photo-1547658719-da2b51169166?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
+    devops: [
+      "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
+    microservices: [
+      "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
+    api: [
+      "https://images.unsplash.com/photo-1547658719-da2b51169166?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
+    database: [
+      "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
+    sql: [
+      "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=200&fit=crop&auto=format&q=80",
+    ],
+    nosql: [
+      "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=200&fit=crop&auto=format&q=80",
     ],
 
     // Default fallback
@@ -161,21 +258,15 @@ export const getReliableImageUrl = async (query: string): Promise<string> => {
   const queryLower = query.toLowerCase();
   let matchedImages: string[] = staticImages.default;
 
-  // Check for exact matches first
-  for (const [key, images] of Object.entries(staticImages)) {
-    if (queryLower.includes(key)) {
-      matchedImages = images;
-      break;
-    }
-  }
+  // Check for exact matches first (longer phrases first)
+  const sortedKeys = Object.keys(staticImages).sort(
+    (a, b) => b.length - a.length
+  );
 
-  // If no exact match, try partial matches
-  if (matchedImages === staticImages.default) {
-    for (const [key, images] of Object.entries(staticImages)) {
-      if (key !== "default" && queryLower.includes(key)) {
-        matchedImages = images;
-        break;
-      }
+  for (const key of sortedKeys) {
+    if (key !== "default" && queryLower.includes(key)) {
+      matchedImages = staticImages[key];
+      break;
     }
   }
 

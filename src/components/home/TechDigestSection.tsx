@@ -1,132 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { usePersonalizedNews } from "@/hooks/useEnhancedContent";
 import { useFeatureFlag } from "@/hooks/useEnhancedContent";
 import { TopicMatcher } from "@/lib/topicExtraction";
 import { Heart, TrendingUp, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import {
-  getReliableImageUrl,
-  getSafeImageUrl,
-  handleImageError,
-} from "@/lib/imageService";
 import NewsCard from "@/components/NewsCard";
 
 // TODO: Replace with real profile context or Supabase fetch
 const MOCK_FAVORITE_TOPICS = ["ai", "cybersecurity", "machine learning"];
-
-function stripHtml(html) {
-  if (!html) return "";
-  return html.replace(/<[^>]*>?/gm, "");
-}
-
-function getReadTime(text) {
-  if (!text) return "1 min read";
-  const words = text.split(/\s+/).length;
-  const mins = Math.max(1, Math.round(words / 200));
-  return `${mins} min read`;
-}
-
-// Helper to get a dynamic image based on topic or title
-const getCardImage = (item) => {
-  if (item.topic) {
-    return `https://source.unsplash.com/featured/?${encodeURIComponent(
-      item.topic
-    )}`;
-  }
-  if (item.title) {
-    return `https://source.unsplash.com/featured/?${encodeURIComponent(
-      item.title.split(" ")[0]
-    )}`;
-  }
-  return "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80";
-};
-
-const FALLBACK_IMAGE =
-  "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80";
-
-const topicImageMap = {
-  ai: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
-  blockchain:
-    "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=800&q=80",
-  cybersecurity:
-    "https://images.unsplash.com/photo-1510511459019-5dda7724fd87?auto=format&fit=crop&w=800&q=80",
-  "machine learning":
-    "https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=800&q=80",
-  "data science":
-    "https://images.unsplash.com/photo-1465101178521-c1a9136a3b99?auto=format&fit=crop&w=800&q=80",
-  healthtech:
-    "https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=800&q=80",
-  // ...add more as needed
-};
-const fallbackImage = "/placeholder.svg";
-
-const UNSPLASH_ACCESS_KEY = import.meta.env.VITE_UNSPLASH_KEY;
-const PIXABAY_KEY = import.meta.env.VITE_PIXABAY_KEY;
-
-// Utility to fetch topic image
-const fetchTopicImage = async (topic) => {
-  try {
-    const unsplashRes = await axios.get(
-      `https://api.unsplash.com/photos/random`,
-      {
-        params: {
-          query: topic,
-          orientation: "landscape",
-          client_id: UNSPLASH_ACCESS_KEY,
-        },
-      }
-    );
-    return unsplashRes.data.urls.regular;
-  } catch (err) {
-    try {
-      const pixabayRes = await axios.get(`https://pixabay.com/api/`, {
-        params: {
-          key: PIXABAY_KEY,
-          q: topic,
-          image_type: "photo",
-          per_page: 3,
-        },
-      });
-      return pixabayRes.data.hits?.[0]?.webformatURL || fallbackImage;
-    } catch (err2) {
-      return fallbackImage;
-    }
-  }
-};
-
-// Utility: topic-based Unsplash image
-const getTopicImage = (topic, title) => {
-  return `https://source.unsplash.com/featured/?${encodeURIComponent(
-    topic || title || "technology"
-  )}`;
-};
-
-// Utility: clean source name
-const getCleanSourceName = (source) => {
-  const sourceMapping = {
-    "https://techcrunch.com": "TechCrunch",
-    "techcrunch.com": "TechCrunch",
-    techcrunch: "TechCrunch",
-    "wired.com": "Wired",
-    "theverge.com": "The Verge",
-    "arstechnica.com": "Ars Technica",
-    "engadget.com": "Engadget",
-    "venturebeat.com": "VentureBeat",
-  };
-  if (!source) return "";
-  if (source.includes("http")) {
-    try {
-      const domain = new URL(source).hostname.replace("www.", "");
-      return sourceMapping[domain] || domain;
-    } catch {
-      return source;
-    }
-  }
-  return sourceMapping[source.toLowerCase()] || source;
-};
 
 // Helper function to generate takeaways from summary
 const generateTakeaways = (summary: string): string[] => {
@@ -162,13 +45,36 @@ const extractUrl = (source: string, title: string): string => {
   return `https://www.google.com/search?q=${searchQuery}`;
 };
 
+// Utility: clean source name
+const getCleanSourceName = (source) => {
+  const sourceMapping = {
+    "https://techcrunch.com": "TechCrunch",
+    "techcrunch.com": "TechCrunch",
+    techcrunch: "TechCrunch",
+    "wired.com": "Wired",
+    "theverge.com": "The Verge",
+    "arstechnica.com": "Ars Technica",
+    "engadget.com": "Engadget",
+    "venturebeat.com": "VentureBeat",
+  };
+  if (!source) return "";
+  if (source.includes("http")) {
+    try {
+      const domain = new URL(source).hostname.replace("www.", "");
+      return sourceMapping[domain] || domain;
+    } catch {
+      return source;
+    }
+  }
+  return sourceMapping[source.toLowerCase()] || source;
+};
+
 // TechDigestSection: fetch user preferences and filter news
 export default function TechDigestSection() {
   const [loading, setLoading] = React.useState(true);
   const [originalData, setOriginalData] = React.useState([]);
   const [error, setError] = React.useState(null);
   const [userPreferences, setUserPreferences] = React.useState([]);
-  const [cardImages, setCardImages] = React.useState({});
   const navigate = useNavigate();
 
   // Enhanced personalization features
@@ -181,7 +87,7 @@ export default function TechDigestSection() {
     isPersonalized,
     isLoading: isPersonalizing,
   } = usePersonalizedNews(originalData, {
-    maxItems: 12,
+    maxItems: 24,
     sortByRelevance: true,
     includeFallback: true,
     filterBySource: true,
@@ -218,28 +124,57 @@ export default function TechDigestSection() {
         .from("daily_summaries")
         .select("*")
         .order("created_at", { ascending: false })
-        .limit(12);
+        .limit(24);
       console.info("Supabase fetch:", { newsData, newsError });
       if (newsError) throw newsError;
+
+      // For now, always use mock data to ensure diverse images
+      console.log("Using mock data for diverse images");
+      
+      // Import mock data
+      const { getAllMockNewsIds, getMockNewsItem } = await import(
+        "@/lib/mockNewsService"
+      );
+      const mockIds = getAllMockNewsIds();
+      
+      // Use all available mock items (up to 24)
+      const mockItems = mockIds
+        .slice(0, 24)
+        .map((id) => {
+          const mockItem = getMockNewsItem(id);
+          if (mockItem) {
+            return {
+              ...mockItem,
+              id: `mock-${mockItem.id}`, // Ensure unique ID
+            };
+          }
+          return null;
+        })
+        .filter(Boolean); // Remove any null items
+
+      console.log("Mock items created:", mockItems.length);
+      console.log("Mock topics:", mockItems.map(item => item.topic));
+      
+      const finalData = mockItems;
 
       // Step 1: Add console logs
       console.log("User preferences:", preferences);
       console.log(
         "Available topics:",
-        newsData.map((item) => item.topic)
+        finalData.map((item) => item.topic)
       );
       // Enhanced filtering using topic extraction and matching
-      let filtered = newsData;
+      let filtered = finalData;
       if (preferences.length > 0) {
         // Use enhanced topic matcher for better filtering
-        filtered = TopicMatcher.filterContent(newsData, preferences);
+        filtered = TopicMatcher.filterContent(finalData, preferences);
 
         // Sort by relevance
         filtered = TopicMatcher.sortByRelevance(filtered, preferences);
 
         // Don't show all if no matches - let the UI handle empty state
         console.log("TechDigestSection filtering:", {
-          originalCount: newsData.length,
+          originalCount: finalData.length,
           filteredCount: filtered.length,
           preferences,
           filteredTopics: filtered.map((item) => item.topic),
@@ -257,21 +192,6 @@ export default function TechDigestSection() {
   React.useEffect(() => {
     fetchData();
   }, []); // Empty dependency array for single fetch on mount
-
-  // After filtering news, fetch images for all topics
-  React.useEffect(() => {
-    const loadImages = async () => {
-      const imgMap = {};
-      for (const news of data) {
-        const topic = news.topic || news.category || "technology";
-        if (!imgMap[topic]) {
-          imgMap[topic] = await fetchTopicImage(topic);
-        }
-      }
-      setCardImages(imgMap);
-    };
-    if (data.length > 0) loadImages();
-  }, [data]);
 
   // Step 3: Show fallback if nothing matches
   if (!loading && !error && data.length === 0) {
@@ -304,7 +224,7 @@ export default function TechDigestSection() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 8 }).map((_, index) => (
+          {Array.from({ length: 24 }).map((_, index) => (
             <div
               key={index}
               className="bg-gray-200 dark:bg-gray-700 rounded-xl aspect-square animate-pulse"
@@ -356,19 +276,29 @@ export default function TechDigestSection() {
 
       {/* News Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {data.map((item, index) => (
-          <NewsCard
-            key={item.id || index}
-            id={item.id || `news-${index}`}
-            title={item.title || "No Title"}
-            topic={item.topic || item.category || "Tech"}
-            source={getCleanSourceName(item.source) || "Tech Source"}
-            summary={item.summary}
-            takeaways={item.takeaways}
-            url={item.url}
-            publishedAt={item.published_at || item.created_at}
-          />
-        ))}
+        {data.map((item, index) => {
+          // Ensure all cards have summary and takeaways for consistent hover functionality
+          const summary =
+            item.summary ||
+            item.description ||
+            `Learn more about ${item.topic || "this technology"}.`;
+          const takeaways = item.takeaways || generateTakeaways(summary);
+          const url = item.url || extractUrl(item.source, item.title);
+
+          return (
+            <NewsCard
+              key={item.id || index}
+              id={item.id || `news-${index}`}
+              title={item.title || "No Title"}
+              topic={item.topic || item.category || "Tech"}
+              source={getCleanSourceName(item.source) || "Tech Source"}
+              summary={summary}
+              takeaways={takeaways}
+              url={url}
+              publishedAt={item.published_at || item.created_at}
+            />
+          );
+        })}
       </div>
 
       {/* Tags Preview */}
