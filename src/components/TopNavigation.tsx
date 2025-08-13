@@ -45,7 +45,7 @@ const TopNavigation = () => {
             >
               Pricing
             </Link>
-            
+
             {/* Breadcrumb */}
             <div className="flex items-center gap-2">
               {pathSegments.map((segment, index) => (

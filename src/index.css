@@ -6,4 +6,54 @@
   body {
     @apply bg-white dark:bg-gray-900 text-gray-900 dark:text-white;
   }
+
+  /* Safe Compact Mode - 40% size reduction */
+  .compact-mode {
+    --scale-factor: 0.6; /* 40% reduction */
+    --card-padding: 0.6rem; /* Reduced from 1rem */
+    --grid-gap: 0.6rem; /* Reduced from 1rem */
+    --border-radius: 0.5rem; /* Reduced from 0.75rem */
+    --icon-size: 0.8rem; /* Reduced from 1rem */
+    --text-size: 0.9rem; /* Slightly smaller but still readable */
+  }
+
+  /* Default values */
+  :root {
+    --scale-factor: 1;
+    --card-padding: 1rem;
+    --grid-gap: 1rem;
+    --border-radius: 0.75rem;
+    --icon-size: 1rem;
+    --text-size: 1rem;
+  }
+}
+
+/* Safe utility classes that scale with compact mode */
+@layer utilities {
+  .compact-scale {
+    transform: scale(var(--scale-factor));
+    transform-origin: top center;
+  }
+
+  .compact-pad {
+    padding: var(--card-padding);
+  }
+
+  .compact-gap {
+    gap: var(--grid-gap);
+  }
+
+  .compact-radius {
+    border-radius: var(--border-radius);
+  }
+
+  .compact-text {
+    font-size: var(--text-size);
+  }
+
+  .compact-icon {
+    font-size: var(--icon-size);
+    width: var(--icon-size);
+    height: var(--icon-size);
+  }
 }

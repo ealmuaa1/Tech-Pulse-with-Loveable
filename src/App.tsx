@@ -43,7 +43,7 @@ import EmailSignupModal from "@/components/EmailSignupModal";
  */
 function App() {
   return (
-    <>
+    <div className="compact-scale">
       <TopNavigation />
       <Routes>
         <Route path="/" element={<HomePage />} />
@@ -66,7 +66,7 @@ function App() {
       {/* Unified modal */}
       <EmailSignupModal />
       <Toaster />
-    </>
+    </div>
   );
 }
 

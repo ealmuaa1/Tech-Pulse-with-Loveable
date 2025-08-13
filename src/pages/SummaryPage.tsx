@@ -71,7 +71,7 @@ const SummaryPage: React.FC = () => {
         let mockId = id;
         if (id && id.startsWith("mock-")) {
           mockId = id.substring(5); // Remove "mock-" prefix
-          
+
           // Try to get from mock data first
           const mockItem = getMockNewsItem(mockId);
           if (mockItem) {
