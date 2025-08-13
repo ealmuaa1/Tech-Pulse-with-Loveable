@@ -67,78 +67,15 @@ const SummaryPage: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        // Try to fetch from Supabase first
-        let { data, error: supabaseError } = await supabase
-          .from("daily_summaries")
-          .select("*")
-          .eq("id", id)
-          .single();
-
-        // If the specific ID doesn't exist, try with a fallback ID
-        if (!data && supabaseError) {
-          console.warn("News item not found with ID:", id, supabaseError);
-
-          // Try with a known existing topic ID as fallback
-          const fallbackIds = [
-            "ai-fundamentals",
-            "tech-trends-core",
-            "blockchain-basics",
-          ];
-
-          for (const fallbackId of fallbackIds) {
-            try {
-              const { data: fallbackData, error: fallbackError } =
-                await supabase
-                  .from("daily_summaries")
-                  .select("*")
-                  .eq("id", fallbackId)
-                  .single();
-
-              if (fallbackData && !fallbackError) {
-                console.log("Using fallback data for ID:", fallbackId);
-                data = fallbackData;
-                supabaseError = null;
-                break;
-              }
-            } catch (fallbackErr) {
-              console.warn("Fallback ID also failed:", fallbackId, fallbackErr);
-            }
-          }
-        }
-
-        if (data) {
-          // Ensure takeaways are available
-          const processedData = {
-            ...data,
-            takeaways:
-              data.takeaways || sentencesToBullets(data.summary || "", 3),
-            url: data.url || generateUrl(data.title || "", data.source || ""),
-          };
-          setNewsItem(processedData);
-          // Fetch image for the topic
-          try {
-            const reliableUrl = await getReliableImageUrl(
-              data.topic || data.title
-            );
-            setImageUrl(reliableUrl);
-          } catch (imageError) {
-            console.warn("Failed to fetch image:", imageError);
-          }
-        } else if (supabaseError) {
-          // If not found in Supabase, check if it's a mock topic ID
-          console.warn("News item not found in database:", supabaseError);
-
-          // Check if this is a mock ID (starts with "mock-")
-          let mockId = id;
-          if (id && id.startsWith("mock-")) {
-            mockId = id.substring(5); // Remove "mock-" prefix
-          }
-
-          // Try to get from mock data
+        // Check if this is a mock ID first (starts with "mock-")
+        let mockId = id;
+        if (id && id.startsWith("mock-")) {
+          mockId = id.substring(5); // Remove "mock-" prefix
+          
+          // Try to get from mock data first
           const mockItem = getMockNewsItem(mockId);
-
           if (mockItem) {
-            // Ensure takeaways are available for mock data too
+            // Process mock data
             const processedMockItem = {
               ...mockItem,
               takeaways:
@@ -164,9 +101,39 @@ const SummaryPage: React.FC = () => {
                 );
               }
             }
-          } else {
-            setError("News summary not found");
+            setLoading(false);
+            return; // Exit early, no need to query database
           }
+        }
+
+        // Only query database if it's not a mock ID or mock data not found
+        let { data, error: supabaseError } = await supabase
+          .from("daily_summaries")
+          .select("*")
+          .eq("id", id)
+          .single();
+
+        if (data) {
+          // Ensure takeaways are available
+          const processedData = {
+            ...data,
+            takeaways:
+              data.takeaways || sentencesToBullets(data.summary || "", 3),
+            url: data.url || generateUrl(data.title || "", data.source || ""),
+          };
+          setNewsItem(processedData);
+          // Fetch image for the topic
+          try {
+            const reliableUrl = await getReliableImageUrl(
+              data.topic || data.title
+            );
+            setImageUrl(reliableUrl);
+          } catch (imageError) {
+            console.warn("Failed to fetch image:", imageError);
+          }
+        } else {
+          // If not found in database and not a mock ID, show error
+          setError("News summary not found");
         }
       } catch (err) {
         console.error("Error fetching news item:", err);
