@@ -4,7 +4,7 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import { Loader2, Settings, Moon, Sun, Palette, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import BottomNavigation from "@/components/BottomNavigation";
+import TechDigestSection from "../components/home/TechDigestSection";
 
 // Import the new home components
 import UserProgressBar from "@/components/home/UserProgressBar";
@@ -14,7 +14,9 @@ import BadgeShowcase from "@/components/home/BadgeShowcase";
 import UnlockedTools from "@/components/home/UnlockedTools";
 import MicroContentGrid from "@/components/home/MicroContentGrid";
 import TodaysTopDigests from "@/components/home/TodaysTopDigests";
-import TechDigestSection from "../components/home/TechDigestSection";
+import TrendingTopicsSection from "@/components/home/TrendingTopicsSection";
+import QuickActionsSection from "@/components/home/QuickActionsSection";
+import PersonalizedLearningSection from "@/components/home/PersonalizedLearningSection";
 
 // Import utilities
 import {
@@ -345,11 +347,6 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Bottom Navigation */}
-      <BottomNavigation currentPage="home" />
-
-
     </div>
   );
 };

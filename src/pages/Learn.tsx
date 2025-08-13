@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import BottomNavigation from "@/components/BottomNavigation";
+// BottomNavigation moved to App level
 import TopicCard from "@/components/TopicCard";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -349,7 +349,6 @@ const Learn = () => {
           )}
         </section>
       </main>
-      <BottomNavigation currentPage="learn" />
     </div>
   );
 };

@@ -1,6 +1,7 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
 import TopNavigation from "@/components/TopNavigation";
+import BottomNavigation from "@/components/BottomNavigation";
 // import EmailPopup from "@/components/EmailPopup"; // deprecated in favor of EmailSignupModal
 import LandingPage from "./pages/LandingPage";
 import HomePage from "./pages/HomePage";
@@ -42,31 +43,53 @@ import EmailSignupModal from "@/components/EmailSignupModal";
  * - *: 404 Not Found page
  */
 function App() {
+  const location = useLocation();
+
+  // Determine current page for bottom navigation
+  const getCurrentPage = () => {
+    const path = location.pathname;
+    if (path === "/" || path === "/home") return "home";
+    if (path === "/explore") return "explore";
+    if (path.startsWith("/learn")) return "learn";
+    if (path.startsWith("/quest")) return "quest";
+    if (path === "/profile") return "profile";
+    if (path === "/dashboard") return "dashboard";
+    if (path === "/login") return "login";
+    return "home"; // default
+  };
+
   return (
-    <div className="compact-scale">
-      <TopNavigation />
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/home" element={<HomePage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/explore" element={<ExplorePage />} />
-        <Route path="/learn" element={<Learn />} />
-        <Route path="/learn/:slug" element={<TopicPage />} />
-        <Route path="/learn/:slug/flashcards" element={<FlashcardPage />} />
-        <Route path="/learn/:slug/quiz" element={<QuizPage />} />
-        <Route path="/quest/:slug" element={<QuestPage />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/summary/:id" element={<SummaryPage />} />
-        <Route path="/pricing" element={<PricingPage />} />
-        <Route path="/success" element={<SuccessPage />} />
-        <Route path="/cancel" element={<CancelPage />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-      {/* Unified modal */}
-      <EmailSignupModal />
-      <Toaster />
-    </div>
+    <>
+      {/* Main content with compact scaling */}
+      <div className="compact-scale bottom-nav-locked">
+        <TopNavigation />
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/explore" element={<ExplorePage />} />
+          <Route path="/learn" element={<Learn />} />
+          <Route path="/learn/:slug" element={<TopicPage />} />
+          <Route path="/learn/:slug/flashcards" element={<FlashcardPage />} />
+          <Route path="/learn/:slug/quiz" element={<QuizPage />} />
+          <Route path="/quest/:slug" element={<QuestPage />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/summary/:id" element={<SummaryPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/success" element={<SuccessPage />} />
+          <Route path="/cancel" element={<CancelPage />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+
+        {/* Unified modal */}
+        <EmailSignupModal />
+        <Toaster />
+      </div>
+
+      {/* Global Bottom Navigation - Outside compact scaling, always visible and locked */}
+      <BottomNavigation currentPage={getCurrentPage()} />
+    </>
   );
 }
 

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import BottomNavigation from "@/components/BottomNavigation";
+// BottomNavigation moved to App level
 import {
   BookOpen,
   Clock,
@@ -656,8 +656,6 @@ const ExplorePage = () => {
           </div>
         </div>
       </div>
-
-      <BottomNavigation currentPage="explore" />
     </div>
   );
 };

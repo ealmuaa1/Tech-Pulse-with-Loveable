@@ -7,14 +7,14 @@
     @apply bg-white dark:bg-gray-900 text-gray-900 dark:text-white;
   }
 
-  /* Safe Compact Mode - 40% size reduction */
+  /* Safe Compact Mode - 50% size reduction */
   .compact-mode {
-    --scale-factor: 0.6; /* 40% reduction */
-    --card-padding: 0.6rem; /* Reduced from 1rem */
-    --grid-gap: 0.6rem; /* Reduced from 1rem */
+    --scale-factor: 0.5; /* 50% reduction */
+    --card-padding: 0.5rem; /* Reduced from 1rem */
+    --grid-gap: 0.5rem; /* Reduced from 1rem */
     --border-radius: 0.5rem; /* Reduced from 0.75rem */
-    --icon-size: 0.8rem; /* Reduced from 1rem */
-    --text-size: 0.9rem; /* Slightly smaller but still readable */
+    --icon-size: 0.75rem; /* Reduced from 1rem */
+    --text-size: 0.85rem; /* Slightly smaller but still readable */
   }
 
   /* Default values */
@@ -25,6 +25,11 @@
     --border-radius: 0.75rem;
     --icon-size: 1rem;
     --text-size: 1rem;
+  }
+
+  /* Lock bottom navigation - reduced padding for compact nav */
+  .bottom-nav-locked {
+    padding-bottom: 3rem; /* Reduced from 4rem for more compact nav */
   }
 }
 

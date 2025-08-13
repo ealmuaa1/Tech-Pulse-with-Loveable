@@ -1,5 +1,5 @@
 import React from "react";
-import BottomNavigation from "@/components/BottomNavigation";
+// BottomNavigation moved to App level
 
 const mockTrends = [
   {
@@ -43,7 +43,6 @@ export default function Dashboard() {
       </div>
 
       {/* Bottom Navigation */}
-      <BottomNavigation currentPage="dashboard" />
     </div>
   );
 }

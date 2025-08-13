@@ -29,7 +29,7 @@ import { supabase } from "@/lib/supabase";
 import { useUser } from "@supabase/auth-helpers-react";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useToast } from "@/components/ui/use-toast";
-import BottomNavigation from "@/components/BottomNavigation";
+// BottomNavigation moved to App level
 
 interface Achievement {
   name: string;
@@ -318,7 +318,8 @@ const Profile: React.FC = () => {
                   </p>
                 )}
                 <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">
-                  Current Plan: <span className="font-semibold">{planName}</span>
+                  Current Plan:{" "}
+                  <span className="font-semibold">{planName}</span>
                 </p>
               </div>
             </div>
@@ -597,19 +598,23 @@ const Profile: React.FC = () => {
                 <Button
                   variant="ghost"
                   className="w-full flex justify-between items-center px-4 py-3 rounded-lg text-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                  onClick={() => navigate('/pricing')}
+                  onClick={() => navigate("/pricing")}
                 >
                   <span>Manage Subscription</span>
-                  <Badge className="bg-green-500 text-white text-xs">Active</Badge>
+                  <Badge className="bg-green-500 text-white text-xs">
+                    Active
+                  </Badge>
                 </Button>
               ) : (
                 <Button
                   variant="ghost"
                   className="w-full flex justify-between items-center px-4 py-3 rounded-lg text-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                  onClick={() => navigate('/pricing')}
+                  onClick={() => navigate("/pricing")}
                 >
                   <span>Upgrade to Pro</span>
-                  <Badge className="bg-purple-500 text-white text-xs">$7/month</Badge>
+                  <Badge className="bg-purple-500 text-white text-xs">
+                    $7/month
+                  </Badge>
                 </Button>
               )}
 
@@ -658,7 +663,6 @@ const Profile: React.FC = () => {
           <p>Help and support content will be displayed here.</p>
         </SettingsModal>
       </div>
-      <BottomNavigation currentPage="profile" />
     </div>
   );
 };
