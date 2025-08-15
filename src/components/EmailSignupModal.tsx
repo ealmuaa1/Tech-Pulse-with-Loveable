@@ -1,10 +1,10 @@
 // src/components/EmailSignupModal.tsx
-import { useEffect, useMemo, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
-import { upsertSubscriber } from '@/services/newsletter';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import { upsertSubscriber } from "@/services/newsletter";
+import { motion, AnimatePresence } from "framer-motion";
 
-const DISMISS_KEY = 'tp:newsletter:dismissed:v2';
+const DISMISS_KEY = "tp:newsletter:dismissed:v2";
 
 type Answers = {
   email: string;
@@ -12,14 +12,16 @@ type Answers = {
   primary_goal: string;
   update_frequency: string;
   usage_type: string;
+  biggest_challenge: string; // New field
 };
 
 const defaultAnswers: Answers = {
-  email: '',
+  email: "",
   interests: [],
-  primary_goal: '',
-  update_frequency: '',
-  usage_type: '',
+  primary_goal: "",
+  update_frequency: "",
+  usage_type: "",
+  biggest_challenge: "", // New field
 };
 
 export default function EmailSignupModal() {
@@ -27,19 +29,40 @@ export default function EmailSignupModal() {
   const [answers, setAnswers] = useState<Answers>(defaultAnswers);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Show only after login, and only if not dismissed
+  // Show modal when user logs in or if not dismissed
   useEffect(() => {
-    (async () => {
+    const checkAuthAndShow = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return; // must be logged in for the popup and RLS
-
       const dismissed = localStorage.getItem(DISMISS_KEY);
-      if (!dismissed) {
-        setAnswers(a => ({ ...a, email: session.user.email ?? '' }));
+      
+      // Show if user is authenticated and not dismissed
+      if (session && !dismissed) {
+        const userEmail = session.user.email ?? '';
+        setAnswers(a => ({ ...a, email: userEmail }));
+        setIsAuthenticated(true);
         setOpen(true);
       }
-    })();
+    };
+
+    // Check immediately
+    checkAuthAndShow();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        const dismissed = localStorage.getItem(DISMISS_KEY);
+        if (!dismissed) {
+          const userEmail = session.user.email ?? '';
+          setAnswers(a => ({ ...a, email: userEmail }));
+          setIsAuthenticated(true);
+          setOpen(true);
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const canSubmit = useMemo(() => {
@@ -47,29 +70,34 @@ export default function EmailSignupModal() {
       answers.interests.length > 0 &&
       !!answers.primary_goal &&
       !!answers.update_frequency &&
-      !!answers.usage_type;
+      !!answers.usage_type &&
+      !!answers.biggest_challenge; // New requirement
   }, [answers]);
 
   async function handleFinish() {
     if (!canSubmit) return;
     setLoading(true);
+    
     const { error } = await upsertSubscriber({
       email: answers.email,
       interests: answers.interests,
       primary_goal: answers.primary_goal,
       update_frequency: answers.update_frequency,
       usage_type: answers.usage_type,
+      biggest_challenge: answers.biggest_challenge, // New field
     });
+    
     setLoading(false);
 
     if (error) {
-      console.error('Newsletter subscription error:', error);
-      alert('We could not save your preferences. Please try again after logging in.');
+      console.error("Newsletter subscription error:", error);
+      const errorMessage = error.message || "Unknown error occurred";
+      alert(`We could not save your preferences: ${errorMessage}`);
       return;
     }
 
     setDone(true);
-    localStorage.setItem(DISMISS_KEY, '1');
+    localStorage.setItem(DISMISS_KEY, "1");
     // Close after brief success state
     setTimeout(() => setOpen(false), 1400);
   }
@@ -101,9 +129,14 @@ export default function EmailSignupModal() {
             <input
               className="mt-1 w-full rounded-lg border px-3 py-2 text-gray-700 bg-gray-50"
               value={answers.email}
-              readOnly
+              readOnly={isAuthenticated}
+              onChange={(e) => setAnswers(a => ({ ...a, email: e.target.value }))}
             />
-            <p className="mt-1 text-xs text-gray-500">Uses your signed-in email.</p>
+            <p className="mt-1 text-xs text-gray-500">
+              {isAuthenticated
+                ? 'Uses your signed-in email.'
+                : 'Please enter your email address.'}
+            </p>
           </div>
 
           {/* Interests (multi-select via simple checkboxes) */}
@@ -165,7 +198,7 @@ export default function EmailSignupModal() {
           </div>
 
           {/* Usage type */}
-          <div className="mb-4">
+          <div className="mb-3">
             <label className="text-sm font-medium">Using AI for…</label>
             <div className="mt-2 flex gap-2">
               {['personal', 'business', 'both'].map(opt => (
@@ -181,12 +214,31 @@ export default function EmailSignupModal() {
             </div>
           </div>
 
+          {/* Biggest challenge - NEW QUESTION */}
+          <div className="mb-4">
+            <label className="text-sm font-medium">What's your biggest challenge with AI?</label>
+            <select
+              className="mt-1 w-full rounded-lg border px-3 py-2"
+              value={answers.biggest_challenge}
+              onChange={(e) => setAnswers(a => ({ ...a, biggest_challenge: e.target.value }))}
+            >
+              <option value="">Select…</option>
+              <option value="getting_started">Getting started</option>
+              <option value="finding_tools">Finding the right tools</option>
+              <option value="integration">Integration with existing workflow</option>
+              <option value="cost_concerns">Cost concerns</option>
+              <option value="learning_curve">Steep learning curve</option>
+              <option value="quality_control">Quality control</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
           <div className="flex items-center justify-between">
             <button
               type="button"
               className="rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-100"
               onClick={() => {
-                localStorage.setItem(DISMISS_KEY, '1');
+                localStorage.setItem(DISMISS_KEY, "1");
                 setOpen(false);
               }}
             >
