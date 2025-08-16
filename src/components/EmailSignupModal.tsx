@@ -34,13 +34,15 @@ export default function EmailSignupModal() {
   // Show modal when user logs in or if not dismissed
   useEffect(() => {
     const checkAuthAndShow = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const dismissed = localStorage.getItem(DISMISS_KEY);
-      
+
       // Show if user is authenticated and not dismissed
       if (session && !dismissed) {
-        const userEmail = session.user.email ?? '';
-        setAnswers(a => ({ ...a, email: userEmail }));
+        const userEmail = session.user.email ?? "";
+        setAnswers((a) => ({ ...a, email: userEmail }));
         setIsAuthenticated(true);
         setOpen(true);
       }
@@ -50,12 +52,14 @@ export default function EmailSignupModal() {
     checkAuthAndShow();
 
     // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_IN" && session) {
         const dismissed = localStorage.getItem(DISMISS_KEY);
         if (!dismissed) {
-          const userEmail = session.user.email ?? '';
-          setAnswers(a => ({ ...a, email: userEmail }));
+          const userEmail = session.user.email ?? "";
+          setAnswers((a) => ({ ...a, email: userEmail }));
           setIsAuthenticated(true);
           setOpen(true);
         }
@@ -66,18 +70,20 @@ export default function EmailSignupModal() {
   }, []);
 
   const canSubmit = useMemo(() => {
-    return !!answers.email &&
+    return (
+      !!answers.email &&
       answers.interests.length > 0 &&
       !!answers.primary_goal &&
       !!answers.update_frequency &&
       !!answers.usage_type &&
-      !!answers.biggest_challenge; // New requirement
+      !!answers.biggest_challenge
+    ); // New requirement
   }, [answers]);
 
   async function handleFinish() {
     if (!canSubmit) return;
     setLoading(true);
-    
+
     const { error } = await upsertSubscriber({
       email: answers.email,
       interests: answers.interests,
@@ -86,7 +92,7 @@ export default function EmailSignupModal() {
       usage_type: answers.usage_type,
       biggest_challenge: answers.biggest_challenge, // New field
     });
-    
+
     setLoading(false);
 
     if (error) {
@@ -108,7 +114,9 @@ export default function EmailSignupModal() {
     <AnimatePresence>
       <motion.div
         className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4"
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
       >
         <motion.div
           className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl"
@@ -119,7 +127,8 @@ export default function EmailSignupModal() {
           <div className="mb-4">
             <h3 className="text-xl font-semibold">Stay in the loop</h3>
             <p className="text-sm text-gray-600">
-              Weekly AI & tech updates, plus hand-picked tools. Tell us what you want more of:
+              Weekly AI & tech updates, plus hand-picked tools. Tell us what you
+              want more of:
             </p>
           </div>
 
@@ -130,49 +139,64 @@ export default function EmailSignupModal() {
               className="mt-1 w-full rounded-lg border px-3 py-2 text-gray-700 bg-gray-50"
               value={answers.email}
               readOnly={isAuthenticated}
-              onChange={(e) => setAnswers(a => ({ ...a, email: e.target.value }))}
+              onChange={(e) =>
+                setAnswers((a) => ({ ...a, email: e.target.value }))
+              }
             />
             <p className="mt-1 text-xs text-gray-500">
               {isAuthenticated
-                ? 'Uses your signed-in email.'
-                : 'Please enter your email address.'}
+                ? "Uses your signed-in email."
+                : "Please enter your email address."}
             </p>
           </div>
 
           {/* Interests (multi-select via simple checkboxes) */}
           <fieldset className="mb-3">
-            <legend className="text-sm font-medium">Which areas interest you most?</legend>
+            <legend className="text-sm font-medium">
+              Which areas interest you most?
+            </legend>
             <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
-              {['AI', 'Automation', 'Mobile', 'Web3', 'Security', 'Data'].map(opt => {
-                const selected = answers.interests.includes(opt);
-                return (
-                  <label key={opt} className={`flex items-center gap-2 rounded-lg border px-3 py-2 ${selected ? 'bg-indigo-50 border-indigo-300' : ''}`}>
-                    <input
-                      type="checkbox"
-                      checked={selected}
-                      onChange={(e) =>
-                        setAnswers(a => ({
-                          ...a,
-                          interests: e.target.checked
-                            ? [...a.interests, opt]
-                            : a.interests.filter(x => x !== opt)
-                        }))
-                      }
-                    />
-                    {opt}
-                  </label>
-                );
-              })}
+              {["AI", "Automation", "Mobile", "Web3", "Security", "Data"].map(
+                (opt) => {
+                  const selected = answers.interests.includes(opt);
+                  return (
+                    <label
+                      key={opt}
+                      className={`flex items-center gap-2 rounded-lg border px-3 py-2 ${
+                        selected ? "bg-indigo-50 border-indigo-300" : ""
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={(e) =>
+                          setAnswers((a) => ({
+                            ...a,
+                            interests: e.target.checked
+                              ? [...a.interests, opt]
+                              : a.interests.filter((x) => x !== opt),
+                          }))
+                        }
+                      />
+                      {opt}
+                    </label>
+                  );
+                }
+              )}
             </div>
           </fieldset>
 
           {/* Primary goal */}
           <div className="mb-3">
-            <label className="text-sm font-medium">Your primary goal with AI</label>
+            <label className="text-sm font-medium">
+              Your primary goal with AI
+            </label>
             <select
               className="mt-1 w-full rounded-lg border px-3 py-2"
               value={answers.primary_goal}
-              onChange={(e) => setAnswers(a => ({ ...a, primary_goal: e.target.value }))}
+              onChange={(e) =>
+                setAnswers((a) => ({ ...a, primary_goal: e.target.value }))
+              }
             >
               <option value="">Select…</option>
               <option value="learn_basics">Learn the basics</option>
@@ -184,11 +208,15 @@ export default function EmailSignupModal() {
 
           {/* Update frequency */}
           <div className="mb-3">
-            <label className="text-sm font-medium">How often should we update you?</label>
+            <label className="text-sm font-medium">
+              How often should we update you?
+            </label>
             <select
               className="mt-1 w-full rounded-lg border px-3 py-2"
               value={answers.update_frequency}
-              onChange={(e) => setAnswers(a => ({ ...a, update_frequency: e.target.value }))}
+              onChange={(e) =>
+                setAnswers((a) => ({ ...a, update_frequency: e.target.value }))
+              }
             >
               <option value="">Select…</option>
               <option value="weekly">Weekly</option>
@@ -201,12 +229,16 @@ export default function EmailSignupModal() {
           <div className="mb-3">
             <label className="text-sm font-medium">Using AI for…</label>
             <div className="mt-2 flex gap-2">
-              {['personal', 'business', 'both'].map(opt => (
+              {["personal", "business", "both"].map((opt) => (
                 <button
                   key={opt}
                   type="button"
-                  onClick={() => setAnswers(a => ({ ...a, usage_type: opt }))}
-                  className={`rounded-lg border px-3 py-2 text-sm ${answers.usage_type === opt ? 'bg-indigo-600 text-white border-indigo-600' : 'hover:bg-gray-50'}`}
+                  onClick={() => setAnswers((a) => ({ ...a, usage_type: opt }))}
+                  className={`rounded-lg border px-3 py-2 text-sm ${
+                    answers.usage_type === opt
+                      ? "bg-indigo-600 text-white border-indigo-600"
+                      : "hover:bg-gray-50"
+                  }`}
                 >
                   {opt[0].toUpperCase() + opt.slice(1)}
                 </button>
@@ -216,19 +248,23 @@ export default function EmailSignupModal() {
 
           {/* Biggest challenge - NEW QUESTION */}
           <div className="mb-4">
-            <label className="text-sm font-medium">What's your biggest challenge with AI?</label>
+            <label className="text-sm font-medium">
+              What's your biggest challenge with AI?
+            </label>
             <select
               className="mt-1 w-full rounded-lg border px-3 py-2"
               value={answers.biggest_challenge}
-              onChange={(e) => setAnswers(a => ({ ...a, biggest_challenge: e.target.value }))}
+              onChange={(e) =>
+                setAnswers((a) => ({ ...a, biggest_challenge: e.target.value }))
+              }
             >
               <option value="">Select…</option>
               <option value="getting_started">Getting started</option>
               <option value="finding_tools">Finding the right tools</option>
-              <option value="integration">Integration with existing workflow</option>
+              <option value="integration">
+                Integration with existing workflow
+              </option>
               <option value="cost_concerns">Cost concerns</option>
-              <option value="learning_curve">Steep learning curve</option>
-              <option value="quality_control">Quality control</option>
               <option value="other">Other</option>
             </select>
           </div>
@@ -251,7 +287,7 @@ export default function EmailSignupModal() {
               onClick={handleFinish}
               className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 disabled:opacity-50"
             >
-              {loading ? 'Saving…' : (done ? 'Saved!' : 'Finish')}
+              {loading ? "Saving…" : done ? "Saved!" : "Finish"}
             </button>
           </div>
         </motion.div>

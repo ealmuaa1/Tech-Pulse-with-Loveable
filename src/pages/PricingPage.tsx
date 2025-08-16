@@ -33,7 +33,7 @@ const PricingPage: React.FC = () => {
     },
     {
       name: "Pro",
-      price: "$7",
+      price: "$19",
       description: "Unlock unlimited access to all features",
       features: [
         "Unlimited daily news",

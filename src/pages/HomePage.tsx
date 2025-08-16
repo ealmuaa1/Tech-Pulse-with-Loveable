@@ -294,7 +294,7 @@ const HomePage: React.FC = () => {
                     onClick={() => navigate("/pricing")}
                     className="bg-white text-purple-600 hover:bg-purple-50 font-semibold px-8 py-3"
                   >
-                    Upgrade to Pro - $7/month
+                    Upgrade to Pro - $19/month
                   </Button>
                 </div>
                 <div className="hidden md:block">

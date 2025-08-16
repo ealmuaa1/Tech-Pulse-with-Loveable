@@ -156,7 +156,7 @@ const Login = () => {
                 input: "w-full",
               },
             }}
-            providers={["google", "github"]}
+            providers={["google"]}
             redirectTo={`${window.location.origin}/profile`}
             view="sign_in"
             showLinks={true}

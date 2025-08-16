@@ -613,7 +613,7 @@ const Profile: React.FC = () => {
                 >
                   <span>Upgrade to Pro</span>
                   <Badge className="bg-purple-500 text-white text-xs">
-                    $7/month
+                    $19/month
                   </Badge>
                 </Button>
               )}
