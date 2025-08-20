@@ -67,74 +67,78 @@ const SummaryPage: React.FC = () => {
         setLoading(true);
         setError(null);
 
-        // Check if this is a mock ID first (starts with "mock-")
-        let mockId = id;
-        if (id && id.startsWith("mock-")) {
-          mockId = id.substring(5); // Remove "mock-" prefix
+        // First, try to get from Supabase daily_summaries table
+        try {
+          let { data, error: supabaseError } = await supabase
+            .from("daily_summaries")
+            .select("*")
+            .eq("id", id)
+            .single();
 
-          // Try to get from mock data first
-          const mockItem = getMockNewsItem(mockId);
-          if (mockItem) {
-            // Process mock data
-            const processedMockItem = {
-              ...mockItem,
+          if (data) {
+            // Process Supabase data
+            const processedData = {
+              ...data,
               takeaways:
-                mockItem.takeaways ||
-                sentencesToBullets(mockItem.summary || "", 3),
+                data.takeaways || sentencesToBullets(data.summary || "", 3),
               url:
-                mockItem.url ||
-                generateUrl(mockItem.title || "", mockItem.source || ""),
+                data.url ||
+                data.link ||
+                generateUrl(data.title || "", data.source || ""),
+              topic: data.topic || data.category || "Tech",
+              source: data.source || "Tech Source",
             };
-            setNewsItem(processedMockItem);
-            if (mockItem.image) {
-              setImageUrl(mockItem.image);
-            } else {
-              try {
-                const reliableUrl = await getReliableImageUrl(
-                  mockItem.topic || mockItem.title
-                );
-                setImageUrl(reliableUrl);
-              } catch (imageError) {
-                console.warn(
-                  "Failed to fetch image for mock item:",
-                  imageError
-                );
-              }
+            setNewsItem(processedData);
+
+            // Fetch image for the topic
+            try {
+              const reliableUrl = await getReliableImageUrl(
+                processedData.topic || processedData.title
+              );
+              setImageUrl(reliableUrl);
+            } catch (imageError) {
+              console.warn("Failed to fetch image:", imageError);
             }
             setLoading(false);
-            return; // Exit early, no need to query database
+            return; // Exit early, found in Supabase
           }
+        } catch (dbError) {
+          console.warn("Supabase query failed or no data found:", dbError);
+          // Continue to mock data fallback
         }
 
-        // Only query database if it's not a mock ID or mock data not found
-        let { data, error: supabaseError } = await supabase
-          .from("daily_summaries")
-          .select("*")
-          .eq("id", id)
-          .single();
-
-        if (data) {
-          // Ensure takeaways are available
-          const processedData = {
-            ...data,
+        // If not found in Supabase, try mock data
+        const mockItem = getMockNewsItem(id);
+        if (mockItem) {
+          // Process mock data
+          const processedMockItem = {
+            ...mockItem,
             takeaways:
-              data.takeaways || sentencesToBullets(data.summary || "", 3),
-            url: data.url || generateUrl(data.title || "", data.source || ""),
+              mockItem.takeaways ||
+              sentencesToBullets(mockItem.summary || "", 3),
+            url:
+              mockItem.url ||
+              generateUrl(mockItem.title || "", mockItem.source || ""),
           };
-          setNewsItem(processedData);
-          // Fetch image for the topic
-          try {
-            const reliableUrl = await getReliableImageUrl(
-              data.topic || data.title
-            );
-            setImageUrl(reliableUrl);
-          } catch (imageError) {
-            console.warn("Failed to fetch image:", imageError);
+          setNewsItem(processedMockItem);
+          if (mockItem.image) {
+            setImageUrl(mockItem.image);
+          } else {
+            try {
+              const reliableUrl = await getReliableImageUrl(
+                mockItem.topic || mockItem.title
+              );
+              setImageUrl(reliableUrl);
+            } catch (imageError) {
+              console.warn("Failed to fetch image for mock item:", imageError);
+            }
           }
-        } else {
-          // If not found in database and not a mock ID, show error
-          setError("News summary not found");
+          setLoading(false);
+          return; // Exit early, found in mock data
         }
+
+        // If not found in either source, show error
+        setError("News summary not found");
       } catch (err) {
         console.error("Error fetching news item:", err);
         setError("Failed to load news summary");

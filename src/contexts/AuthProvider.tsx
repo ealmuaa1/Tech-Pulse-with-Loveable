@@ -143,7 +143,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     try {
       const {
-        user: newUser,
+        user: signedUpUser,
         session: newSession,
         error,
       } = await authUtils.signUp(email, password);
@@ -153,9 +153,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { error };
       }
 
-      if (newUser && newSession) {
-        console.log("AuthProvider: Sign up successful for user:", newUser.id);
-        setUser(newUser);
+      if (signedUpUser && newSession) {
+        console.log(
+          "AuthProvider: Sign up successful for user:",
+          signedUpUser.id
+        );
+        setUser(signedUpUser);
         setSession(newSession);
       }
 
@@ -171,17 +174,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Sign out function
   const signOut = useCallback(async () => {
     console.log("AuthProvider: Signing out user...");
-    setLoading(true);
 
     try {
-      await authUtils.signOut();
+      const { error } = await authUtils.signOut();
+
+      if (error) {
+        console.error("AuthProvider: Sign out failed:", error);
+        return;
+      }
+
+      console.log("AuthProvider: Sign out successful");
       setUser(null);
       setSession(null);
-      console.log("AuthProvider: Sign out successful");
     } catch (error) {
       console.error("AuthProvider: Sign out error:", error);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
@@ -259,31 +265,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 };
 
 // Custom hook to use auth context
-export const useAuth = (): AuthContextType => {
+export const useAuth = () => {
   const context = useContext(AuthContext);
-
   if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
-
   return context;
 };
 
-// Hook for protected routes
+// Custom hook for protected routes
 export const useRequireAuth = () => {
   const { user, loading } = useAuth();
-  const [shouldRedirect, setShouldRedirect] = useState(false);
 
-  useEffect(() => {
-    if (!loading && !user) {
-      console.log(
-        "useRequireAuth: User not authenticated, should redirect to login"
-      );
-      setShouldRedirect(true);
-    } else if (user) {
-      setShouldRedirect(false);
-    }
-  }, [user, loading]);
+  if (loading) {
+    return { user: null, loading: true };
+  }
 
-  return { user, loading, shouldRedirect };
+  if (!user) {
+    return { user: null, loading: false };
+  }
+
+  return { user, loading: false };
 };

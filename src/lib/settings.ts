@@ -1,5 +1,4 @@
-import { db } from "./firebase";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { supabase } from "./supabase";
 
 export interface UserSettings {
   darkMode: boolean;
@@ -25,10 +24,20 @@ export const saveSettings = async (userId: string, settings: UserSettings) => {
     // Save to localStorage for immediate access
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
 
-    // Save to Firebase if user is logged in
+    // Save to Supabase if user is logged in
     if (userId) {
-      const userRef = doc(db, "users", userId);
-      await setDoc(userRef, { settings }, { merge: true });
+      const { error } = await supabase
+        .from("preferences")
+        .upsert({
+          user_id: userId,
+          settings: settings,
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (error) {
+        console.error("Error saving settings to Supabase:", error);
+      }
     }
   } catch (error) {
     console.error("Error saving settings:", error);
@@ -41,11 +50,14 @@ export const loadUserSettings = async (
   try {
     if (!userId) return getStoredSettings();
 
-    const userRef = doc(db, "users", userId);
-    const userDoc = await getDoc(userRef);
+    const { data, error } = await supabase
+      .from("preferences")
+      .select("settings")
+      .eq("user_id", userId)
+      .single();
 
-    if (userDoc.exists() && userDoc.data().settings) {
-      const settings = userDoc.data().settings as UserSettings;
+    if (!error && data && data.settings) {
+      const settings = data.settings as UserSettings;
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
       return settings;
     }

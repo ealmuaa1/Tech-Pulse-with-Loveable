@@ -17,19 +17,16 @@ import {
   Check,
   Loader2,
 } from "lucide-react";
-import { auth } from "@/lib/firebase";
 import { useEffect, useState, useMemo, useRef } from "react";
-import { User as FirebaseUser } from "firebase/auth";
 import { SettingsModal } from "@/components/ui/settings-modal";
 import { UserSettings, loadUserSettings, saveSettings } from "@/lib/settings";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import TopicSelector from "@/components/TopicSelector";
 import { supabase } from "@/lib/supabase";
-import { useUser } from "@supabase/auth-helpers-react";
+import { useAuth } from "@/contexts/AuthProvider";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useToast } from "@/components/ui/use-toast";
-// BottomNavigation moved to App level
 
 interface Achievement {
   name: string;
@@ -109,35 +106,33 @@ const Profile: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isPro, planName } = useSubscription();
+  const { user, loading, signOut } = useAuth();
   const [favoriteTopics, setFavoriteTopics] = useState<string[]>([]);
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
 
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Handle redirect after render to avoid React Router error
   useEffect(() => {
-    const fetchUserAndProfile = async () => {
-      const {
-        data: { user: supabaseUser },
-        error: userError,
-      } = await supabase.auth.getUser();
+    if (shouldRedirect) {
+      navigate("/login");
+      setShouldRedirect(false);
+    }
+  }, [shouldRedirect, navigate]);
 
-      if (userError) {
-        console.error("Error fetching user:", userError);
-        setLoading(false);
-        return;
-      }
+  // Fetch user preferences when user is available
+  useEffect(() => {
+    const fetchUserPreferences = async () => {
+      if (!user) return;
 
-      if (supabaseUser) {
-        setUser(supabaseUser);
-
+      try {
         // Fetch preferences from preferences table
         const { data: preferences, error: preferencesError } = await supabase
           .from("preferences")
           .select("favorite_topics")
-          .eq("user_id", supabaseUser.id)
+          .eq("user_id", user.id)
           .single();
 
         if (!preferencesError && preferences) {
@@ -147,27 +142,30 @@ const Profile: React.FC = () => {
           // No preferences found, start with empty array
           setFavoriteTopics([]);
         }
+      } catch (error) {
+        console.error("Error fetching preferences:", error);
+        setFavoriteTopics([]);
       }
-      setLoading(false);
     };
-    fetchUserAndProfile();
-  }, []);
 
+    fetchUserPreferences();
+  }, [user]);
+
+  // Load user settings when user is available
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(
-      async (currentUser) => {
-        if (currentUser) {
-          const userSettings = await loadUserSettings(currentUser.uid);
-          setSettings(userSettings);
-        }
-      },
-      (error) => {
-        console.error("Auth state change error:", error);
-      }
-    );
+    const loadSettings = async () => {
+      if (!user) return;
 
-    return () => unsubscribe();
-  }, []);
+      try {
+        const userSettings = await loadUserSettings(user.id);
+        setSettings(userSettings);
+      } catch (error) {
+        console.error("Error loading user settings:", error);
+      }
+    };
+
+    loadSettings();
+  }, [user]);
 
   useEffect(() => {
     if (settings.darkMode) {
@@ -184,7 +182,7 @@ const Profile: React.FC = () => {
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
     if (user) {
-      await saveSettings(user.uid, newSettings);
+      await saveSettings(user.id, newSettings);
     }
   };
 
@@ -256,8 +254,23 @@ const Profile: React.FC = () => {
     }
   };
 
-  if (loading) return <div>Loading profile...</div>;
-  if (!user) return <div>Please log in</div>;
+  // Show loading state while auth is initializing
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-purple-600" />
+          <p className="text-gray-600">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Set redirect flag if not authenticated (instead of immediate navigate)
+  if (!user) {
+    setShouldRedirect(true);
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
@@ -325,16 +338,16 @@ const Profile: React.FC = () => {
             </div>
           </motion.div>
 
-          {/* Favorite Topics Section */}
+          {/* Consolidated Favorite Topics Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all duration-300"
+            className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all duration-300"
           >
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                <h3 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-purple-700 dark:from-white dark:to-purple-400">
                   Favorite Topics
                 </h3>
                 <Button
@@ -343,8 +356,8 @@ const Profile: React.FC = () => {
                   className={`relative ${
                     saveSuccess
                       ? "bg-green-500 hover:bg-green-600"
-                      : "bg-primary hover:bg-primary/90"
-                  } text-white transition-all duration-300`}
+                      : "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
+                  } text-white transition-all duration-300 shadow-md`}
                 >
                   <motion.div
                     initial={false}
@@ -416,39 +429,6 @@ const Profile: React.FC = () => {
                 Quests Completed
               </p>
             </div>
-          </motion.div>
-
-          {/* Interests Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all duration-300"
-          >
-            <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-purple-700 dark:from-white dark:to-purple-400 mb-6">
-              Your Interests
-            </h2>
-            <div className="flex flex-wrap gap-3 mb-6">
-              {memoizedInterests.map((interest) => (
-                <Badge
-                  key={interest}
-                  variant="outline"
-                  className="px-3 py-1 text-sm bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 rounded-full"
-                >
-                  {interest}
-                </Badge>
-              ))}
-            </div>
-            <TopicSelector
-              favoriteTopics={favoriteTopics}
-              onChange={setFavoriteTopics}
-            />
-            <Button
-              onClick={debouncedSave}
-              className="mt-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md hover:from-purple-700 hover:to-pink-700 transition-all duration-300"
-            >
-              Save Preferences
-            </Button>
           </motion.div>
 
           {/* Achievements Section */}
@@ -632,7 +612,7 @@ const Profile: React.FC = () => {
               <Button
                 variant="destructive"
                 className="w-full px-4 py-3 rounded-lg text-lg"
-                onClick={() => auth.signOut()}
+                onClick={signOut}
               >
                 Logout
               </Button>

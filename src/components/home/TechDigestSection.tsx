@@ -108,6 +108,7 @@ export default function TechDigestSection() {
         navigate("/login");
         return;
       }
+
       // Fetch user preferences from the correct table
       let preferences = [];
       const { data: preferencesData, error: preferencesError } = await supabase
@@ -119,53 +120,77 @@ export default function TechDigestSection() {
         preferences = preferencesData.favorite_topics;
         setUserPreferences(preferences);
       }
-      // Fetch news
+
+      // Fetch news from Supabase daily_summaries table
+      console.log("Fetching data from Supabase daily_summaries table");
       const { data: newsData, error: newsError } = await supabase
         .from("daily_summaries")
         .select("*")
         .order("created_at", { ascending: false })
         .limit(24);
+
       console.info("Supabase fetch:", { newsData, newsError });
-      if (newsError) throw newsError;
+      if (newsError) {
+        console.error("Supabase fetch error:", newsError);
+        throw newsError;
+      }
 
-      // For now, always use mock data to ensure diverse images
-      console.log("Using mock data for diverse images");
+      if (!newsData || newsData.length === 0) {
+        console.log(
+          "No data found in daily_summaries table, using mock data as fallback"
+        );
+        // Fallback to mock data if no data in Supabase
+        const { getAllMockNewsIds, getMockNewsItem } = await import(
+          "@/lib/mockNewsService"
+        );
+        const mockIds = getAllMockNewsIds();
+        const mockItems = mockIds
+          .slice(0, 24)
+          .map((id) => {
+            const mockItem = getMockNewsItem(id);
+            if (mockItem) {
+              return {
+                ...mockItem,
+                id: mockItem.id,
+              };
+            }
+            return null;
+          })
+          .filter(Boolean);
 
-      // Import mock data
-      const { getAllMockNewsIds, getMockNewsItem } = await import(
-        "@/lib/mockNewsService"
-      );
-      const mockIds = getAllMockNewsIds();
+        const finalData = mockItems;
+        console.log("Using mock data as fallback:", finalData.length, "items");
 
-      // Use all available mock items (up to 24)
-      const mockItems = mockIds
-        .slice(0, 24)
-        .map((id) => {
-          const mockItem = getMockNewsItem(id);
-          if (mockItem) {
-            return {
-              ...mockItem,
-              id: `mock-${mockItem.id}`, // Ensure unique ID
-            };
-          }
-          return null;
-        })
-        .filter(Boolean); // Remove any null items
+        // Enhanced filtering using topic extraction and matching
+        let filtered = finalData;
+        if (preferences.length > 0) {
+          filtered = TopicMatcher.filterContent(finalData, preferences);
+          filtered = TopicMatcher.sortByRelevance(filtered, preferences);
+        }
+        setOriginalData(filtered);
+        return;
+      }
 
-      console.log("Mock items created:", mockItems.length);
-      console.log(
-        "Mock topics:",
-        mockItems.map((item) => item.topic)
-      );
+      // Process Supabase data
+      const finalData = newsData.map((item) => ({
+        ...item,
+        id:
+          item.id ||
+          `supabase-${item.title?.replace(/\s+/g, "-").toLowerCase()}`,
+        topic: item.topic || item.category || "Tech",
+        source: item.source || "Tech Source",
+        summary: item.summary || item.description || "",
+        takeaways: item.takeaways || [],
+        url: item.url || item.link || "",
+        published_at: item.published_at || item.pubDate || item.created_at,
+      }));
 
-      const finalData = mockItems;
-
-      // Step 1: Add console logs
-      console.log("User preferences:", preferences);
+      console.log("Supabase data processed:", finalData.length, "items");
       console.log(
         "Available topics:",
         finalData.map((item) => item.topic)
       );
+
       // Enhanced filtering using topic extraction and matching
       let filtered = finalData;
       if (preferences.length > 0) {
@@ -175,7 +200,6 @@ export default function TechDigestSection() {
         // Sort by relevance
         filtered = TopicMatcher.sortByRelevance(filtered, preferences);
 
-        // Don't show all if no matches - let the UI handle empty state
         console.log("TechDigestSection filtering:", {
           originalCount: finalData.length,
           filteredCount: filtered.length,
@@ -185,6 +209,7 @@ export default function TechDigestSection() {
       }
       setOriginalData(filtered);
     } catch (err) {
+      console.error("Error in fetchData:", err);
       setError(err.message || "Failed to load news.");
     } finally {
       setLoading(false);

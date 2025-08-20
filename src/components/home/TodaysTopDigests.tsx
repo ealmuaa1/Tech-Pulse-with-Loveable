@@ -27,7 +27,7 @@ interface TodaysTopDigestsProps {
   maxDisplay?: number;
 }
 
-// Mock data for trending topics - in production, this would come from different APIs
+// Mock data for trending topics - using IDs that match mockNewsService.ts
 const generateMockTopics = (): TopicCard[] => {
   const topics = [
     {
@@ -176,9 +176,10 @@ const TodaysTopDigests: React.FC<TodaysTopDigestsProps> = ({
       try {
         setIsLoading(true);
 
-        // Fetch topics from multiple sources using our dynamic fetcher
-        const fetchedTopics = await fetchTrendingTopics(maxDisplay * 2); // Get more for filtering
-        setOriginalTopics(fetchedTopics);
+        // Use mock data directly since daily_summaries table doesn't exist
+        // This ensures the summary pages work correctly with the mock data IDs
+        const mockTopics = generateMockTopics();
+        setOriginalTopics(mockTopics.slice(0, maxDisplay * 2));
       } catch (error) {
         console.error("Error fetching topics:", error);
         // Fallback to mock data
