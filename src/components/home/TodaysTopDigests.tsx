@@ -41,6 +41,7 @@ const generateMockTopics = (): TopicCard[] => {
       trending_score: 98,
       image:
         "https://images.unsplash.com/photo-1576091160550-2173dba999ef?w=400&h=300&fit=crop&auto=format",
+      url: "https://technewsdaily.com/ai-healthcare-2024",
       tags: ["Healthcare", "AI", "GPT-4"],
       takeaways: [
         "GPT-4 shows 95% accuracy in preliminary diagnoses",
@@ -60,6 +61,7 @@ const generateMockTopics = (): TopicCard[] => {
       trending_score: 95,
       image:
         "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400&h=300&fit=crop&auto=format",
+      url: "https://quantumweekly.com/ibm-breakthrough",
       tags: ["Quantum", "IBM", "Computing"],
       takeaways: [
         "IBM's Condor chip achieves 1000+ qubits with improved error rates",
@@ -79,6 +81,7 @@ const generateMockTopics = (): TopicCard[] => {
       trending_score: 89,
       image:
         "https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?w=400&h=300&fit=crop&auto=format",
+      url: "https://sustainabilitytoday.com/green-tech-innovations",
       tags: ["Sustainability", "Green Tech", "Innovation"],
       takeaways: [
         "New solar panel efficiency reaches 47% in lab conditions",
@@ -98,6 +101,7 @@ const generateMockTopics = (): TopicCard[] => {
       trending_score: 92,
       image:
         "https://images.unsplash.com/photo-1639762681057-408e52192e55?w=400&h=300&fit=crop&auto=format",
+      url: "https://web3weekly.com/decentralized-social",
       tags: ["Web3", "Social Media", "Decentralized"],
       takeaways: [
         "Farcaster protocol enables cross-platform social identity",
@@ -117,6 +121,7 @@ const generateMockTopics = (): TopicCard[] => {
       trending_score: 87,
       image:
         "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=400&h=300&fit=crop&auto=format",
+      url: "https://mobileaiweekly.com/edge-ai-mobile",
       tags: ["Edge AI", "Mobile", "Privacy"],
       takeaways: [
         "On-device AI processing reduces latency by 90%",
@@ -136,6 +141,7 @@ const generateMockTopics = (): TopicCard[] => {
       trending_score: 84,
       image:
         "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&h=300&fit=crop&auto=format",
+      url: "https://metaversetoday.com/blockchain-gaming",
       tags: ["Blockchain", "Gaming", "NFTs"],
       takeaways: [
         "NFT ownership enables true digital asset portability",

@@ -48,7 +48,11 @@ const NewsCard: React.FC<NewsCardProps> = ({
   }, [topic, title, id]);
 
   const handleCardClick = () => {
-    if (id) {
+    if (url && url.startsWith('http')) {
+      // External URL - open in new tab
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } else if (id) {
+      // Internal navigation to summary page
       navigate(`/summary/${id}`);
     }
   };
@@ -109,7 +113,7 @@ const NewsCard: React.FC<NewsCardProps> = ({
                          shadow-[0_8px_30px_rgb(0,0,0,0.25)]
                          hover:bg-white/15 active:scale-95 transition"
             >
-              Read full summary →
+              {url && url.startsWith('http') ? 'Read full article →' : 'Read full summary →'}
             </button>
           </div>
         </div>
